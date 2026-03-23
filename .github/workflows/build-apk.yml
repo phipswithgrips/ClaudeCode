@@ -9,6 +9,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+
     steps:
       - name: Code auschecken
         uses: actions/checkout@v4
@@ -19,8 +23,11 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Android SDK einrichten
-        uses: android-actions/setup-android@v3
+      - name: Android Build-Tools prüfen
+        run: |
+          echo "ANDROID_HOME: $ANDROID_HOME"
+          ls $ANDROID_HOME/build-tools/ || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list_installed || true
 
       - name: Debug APK bauen
         working-directory: RezeptApp
