@@ -16,6 +16,8 @@ class WebFormActivity : AppCompatActivity() {
     private val formUrl = "https://www.bergmann-dachau.de/index.php/kontakt/ihreanfrage"
 
     // Persönliche Daten
+    private val userFirstName = "Philipp"
+    private val userLastName = "Reindl"
     private val userName = "Philipp Reindl"
     private val userEmail = "reindlmail@gmail.com"
     private val userPhone = "01733923115"
@@ -92,21 +94,24 @@ Geburtsdatum: $userBirthdate
 Telefon: $userPhone
 E-Mail: $userEmail
 
-Bitte schicken Sie das E-Rezept an meine E-Mail-Adresse oder informieren Sie mich telefonisch.
+Vielen Dank.
 
 Mit freundlichen Grüßen
 $userName"""
     }
 
     private fun injectFormData(webView: WebView, message: String) {
-        val escapedMsg = message
+        val escapedMsg       = message
             .replace("\\", "\\\\")
             .replace("'", "\\'")
             .replace("\n", "\\n")
             .replace("\r", "")
-        val escapedName  = userName.replace("'", "\\'")
-        val escapedEmail = userEmail.replace("'", "\\'")
-        val escapedPhone = userPhone.replace("'", "\\'")
+        val escapedFirstName = userFirstName.replace("'", "\\'")
+        val escapedLastName  = userLastName.replace("'", "\\'")
+        val escapedName      = userName.replace("'", "\\'")
+        val escapedEmail     = userEmail.replace("'", "\\'")
+        val escapedPhone     = userPhone.replace("'", "\\'")
+        val escapedBirthdate = userBirthdate.replace("'", "\\'")
 
         // JavaScript füllt alle typischen Joomla-Kontaktformular-Felder aus
         val js = """
@@ -121,14 +126,66 @@ $userName"""
         });
     }
 
-    // Name
+    function checkByLabelText(keywords) {
+        document.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+            var label = '';
+            if (cb.id) {
+                var lbl = document.querySelector('label[for="' + cb.id + '"]');
+                if (lbl) label = lbl.innerText || lbl.textContent || '';
+            }
+            if (!label) {
+                var parent = cb.closest('label');
+                if (parent) label = parent.innerText || parent.textContent || '';
+            }
+            var lowerLabel = label.toLowerCase();
+            var matches = keywords.some(function(k) { return lowerLabel.indexOf(k.toLowerCase()) !== -1; });
+            if (matches && !cb.checked) {
+                cb.click();
+                cb.dispatchEvent(new Event('change', {bubbles:true}));
+            }
+        });
+    }
+
+    // Vorname
+    fill([
+        'input[name*="vorname"]',
+        'input[id*="vorname"]',
+        'input[placeholder*="Vorname"]',
+        'input[name*="firstname"]',
+        'input[name*="first_name"]',
+        'input[id*="firstname"]'
+    ], '$escapedFirstName');
+
+    // Nachname
+    fill([
+        'input[name*="nachname"]',
+        'input[id*="nachname"]',
+        'input[placeholder*="Nachname"]',
+        'input[name*="lastname"]',
+        'input[name*="last_name"]',
+        'input[name*="surname"]',
+        'input[id*="lastname"]'
+    ], '$escapedLastName');
+
+    // Vollständiger Name (Fallback für kombinierte Felder)
     fill([
         'input[name="jform[contact_name]"]',
         'input[name*="name"]',
         'input[id*="name"]',
-        'input[placeholder*="Name"]',
-        'input[placeholder*="name"]'
+        'input[placeholder*="Name"]'
     ], '$escapedName');
+
+    // Geburtsdatum
+    fill([
+        'input[name*="geburtsdatum"]',
+        'input[id*="geburtsdatum"]',
+        'input[placeholder*="Geburtsdatum"]',
+        'input[placeholder*="geboren"]',
+        'input[name*="birthdate"]',
+        'input[name*="birth_date"]',
+        'input[name*="dob"]',
+        'input[id*="birthdate"]'
+    ], '$escapedBirthdate');
 
     // E-Mail
     fill([
@@ -180,6 +237,12 @@ $userName"""
             el.dispatchEvent(new Event('change', {bubbles:true}));
         });
     });
+
+    // Checkbox: Rezeptanforderung
+    checkByLabelText(['rezept', 'rezeptanforderung', 'anforderung']);
+
+    // Checkbox: Datenschutzerklärung
+    checkByLabelText(['datenschutz', 'datenschutzerklärung', 'privacy', 'dsgvo']);
 
     // Seite nach oben scrollen damit Benutzer alles sieht
     window.scrollTo(0, 0);
