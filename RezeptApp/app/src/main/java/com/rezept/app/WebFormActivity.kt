@@ -126,7 +126,51 @@ $userName"""
         });
     }
 
-    function checkByLabelText(keywords) {
+    // Findet ein Eingabefeld anhand des Label-Texts
+    function fillByLabel(keywords, value) {
+        document.querySelectorAll('label').forEach(function(lbl) {
+            var text = (lbl.innerText || lbl.textContent || '').toLowerCase().trim();
+            var matches = keywords.some(function(k) { return text.indexOf(k.toLowerCase()) !== -1; });
+            if (!matches) return;
+            var input = null;
+            if (lbl.htmlFor) input = document.getElementById(lbl.htmlFor);
+            if (!input) input = lbl.querySelector('input:not([type="checkbox"]):not([type="radio"]), textarea');
+            if (!input) {
+                var next = lbl.nextElementSibling;
+                if (next && (next.tagName === 'INPUT' || next.tagName === 'TEXTAREA')) input = next;
+                if (!input && next) input = next.querySelector('input:not([type="checkbox"]):not([type="radio"]), textarea');
+            }
+            if (input) {
+                input.value = value;
+                input.dispatchEvent(new Event('input',  {bubbles:true}));
+                input.dispatchEvent(new Event('change', {bubbles:true}));
+            }
+        });
+    }
+
+    // Setzt genau eine Checkbox/Radio anhand Label-Text, deaktiviert andere in derselben Gruppe nicht
+    function checkOnlyByLabel(keyword) {
+        document.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(function(cb) {
+            var label = '';
+            if (cb.id) {
+                var lbl = document.querySelector('label[for="' + cb.id + '"]');
+                if (lbl) label = lbl.innerText || lbl.textContent || '';
+            }
+            if (!label) {
+                var parent = cb.closest('label');
+                if (parent) label = parent.innerText || parent.textContent || '';
+            }
+            if ((label.toLowerCase()).indexOf(keyword.toLowerCase()) !== -1) {
+                if (!cb.checked) {
+                    cb.click();
+                    cb.dispatchEvent(new Event('change', {bubbles:true}));
+                }
+            }
+        });
+    }
+
+    // Datenschutz-Checkbox setzen
+    function checkDatenschutz() {
         document.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
             var label = '';
             if (cb.id) {
@@ -137,34 +181,31 @@ $userName"""
                 var parent = cb.closest('label');
                 if (parent) label = parent.innerText || parent.textContent || '';
             }
-            var lowerLabel = label.toLowerCase();
-            var matches = keywords.some(function(k) { return lowerLabel.indexOf(k.toLowerCase()) !== -1; });
-            if (matches && !cb.checked) {
-                cb.click();
-                cb.dispatchEvent(new Event('change', {bubbles:true}));
+            var lower = label.toLowerCase();
+            if (lower.indexOf('datenschutz') !== -1 || lower.indexOf('privacy') !== -1 || lower.indexOf('dsgvo') !== -1) {
+                if (!cb.checked) {
+                    cb.click();
+                    cb.dispatchEvent(new Event('change', {bubbles:true}));
+                }
             }
         });
     }
 
-    // Vorname
+    // Vorname — erst per Label, dann per Attribut
+    fillByLabel(['vorname', 'first name'], '$escapedFirstName');
     fill([
-        'input[name*="vorname"]',
-        'input[id*="vorname"]',
+        'input[name*="vorname"]', 'input[id*="vorname"]',
         'input[placeholder*="Vorname"]',
-        'input[name*="firstname"]',
-        'input[name*="first_name"]',
-        'input[id*="firstname"]'
+        'input[name*="firstname"]', 'input[name*="first_name"]', 'input[id*="firstname"]'
     ], '$escapedFirstName');
 
-    // Nachname
+    // Nachname — erst per Label, dann per Attribut
+    fillByLabel(['nachname', 'last name', 'surname'], '$escapedLastName');
     fill([
-        'input[name*="nachname"]',
-        'input[id*="nachname"]',
+        'input[name*="nachname"]', 'input[id*="nachname"]',
         'input[placeholder*="Nachname"]',
-        'input[name*="lastname"]',
-        'input[name*="last_name"]',
-        'input[name*="surname"]',
-        'input[id*="lastname"]'
+        'input[name*="lastname"]', 'input[name*="last_name"]',
+        'input[name*="surname"]', 'input[id*="lastname"]'
     ], '$escapedLastName');
 
     // Vollständiger Name (Fallback für kombinierte Felder)
@@ -175,16 +216,13 @@ $userName"""
         'input[placeholder*="Name"]'
     ], '$escapedName');
 
-    // Geburtsdatum
+    // Geburtsdatum — erst per Label, dann per Attribut
+    fillByLabel(['geburtsdatum', 'geboren', 'birthdate', 'birth date', 'date of birth'], '$escapedBirthdate');
     fill([
-        'input[name*="geburtsdatum"]',
-        'input[id*="geburtsdatum"]',
-        'input[placeholder*="Geburtsdatum"]',
-        'input[placeholder*="geboren"]',
-        'input[name*="birthdate"]',
-        'input[name*="birth_date"]',
-        'input[name*="dob"]',
-        'input[id*="birthdate"]'
+        'input[name*="geburtsdatum"]', 'input[id*="geburtsdatum"]',
+        'input[placeholder*="Geburtsdatum"]', 'input[placeholder*="geboren"]',
+        'input[name*="birthdate"]', 'input[name*="birth_date"]',
+        'input[name*="dob"]', 'input[id*="birthdate"]'
     ], '$escapedBirthdate');
 
     // E-Mail
@@ -238,11 +276,11 @@ $userName"""
         });
     });
 
-    // Checkbox: Rezeptanforderung
-    checkByLabelText(['rezept', 'rezeptanforderung', 'anforderung']);
+    // Betreff-Checkbox: nur "Rezeptanforderung" setzen
+    checkOnlyByLabel('rezeptanforderung');
 
-    // Checkbox: Datenschutzerklärung
-    checkByLabelText(['datenschutz', 'datenschutzerklärung', 'privacy', 'dsgvo']);
+    // Datenschutz-Checkbox setzen
+    checkDatenschutz();
 
     // Seite nach oben scrollen damit Benutzer alles sieht
     window.scrollTo(0, 0);
