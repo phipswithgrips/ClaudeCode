@@ -18,18 +18,15 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
 
-      - name: Gradle Wrapper generieren
-        run: |
-          cd RezeptApp
-          gradle wrapper --gradle-version 8.4
-          chmod +x gradlew
+      - name: Gradle einrichten
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.4'
 
       - name: Debug APK bauen
-        run: |
-          cd RezeptApp
-          ./gradlew assembleDebug --stacktrace
+        working-directory: RezeptApp
+        run: gradle assembleDebug --stacktrace
 
       - name: APK hochladen
         uses: actions/upload-artifact@v4
@@ -37,7 +34,3 @@ jobs:
           name: RezeptApp-debug-apk
           path: RezeptApp/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
-
-      - name: APK Info ausgeben
-        run: |
-          ls -lh RezeptApp/app/build/outputs/apk/debug/ 2>/dev/null || echo "Build Verzeichnis nicht gefunden"
