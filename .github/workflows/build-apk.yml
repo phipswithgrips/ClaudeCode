@@ -19,6 +19,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Android SDK einrichten
+        uses: android-actions/setup-android@v3
+
       - name: Debug APK bauen
         working-directory: RezeptApp
         run: ./gradlew assembleDebug --stacktrace
