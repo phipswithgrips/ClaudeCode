@@ -126,19 +126,32 @@ $userName"""
         });
     }
 
-    // Findet ein Eingabefeld anhand des Label-Texts
+    // Findet ein Eingabefeld anhand des Label-Texts (sucht auch in Parent-Containern)
     function fillByLabel(keywords, value) {
         document.querySelectorAll('label').forEach(function(lbl) {
             var text = (lbl.innerText || lbl.textContent || '').toLowerCase().trim();
             var matches = keywords.some(function(k) { return text.indexOf(k.toLowerCase()) !== -1; });
             if (!matches) return;
             var input = null;
+            // 1. for-Attribut
             if (lbl.htmlFor) input = document.getElementById(lbl.htmlFor);
+            // 2. Kind-Element
             if (!input) input = lbl.querySelector('input:not([type="checkbox"]):not([type="radio"]), textarea');
+            // 3. Nächstes Geschwister-Element
             if (!input) {
                 var next = lbl.nextElementSibling;
-                if (next && (next.tagName === 'INPUT' || next.tagName === 'TEXTAREA')) input = next;
-                if (!input && next) input = next.querySelector('input:not([type="checkbox"]):not([type="radio"]), textarea');
+                if (next) {
+                    if (next.tagName === 'INPUT' || next.tagName === 'TEXTAREA') input = next;
+                    else input = next.querySelector('input:not([type="checkbox"]):not([type="radio"]), textarea');
+                }
+            }
+            // 4. Eltern-Container (eine Ebene)
+            if (!input && lbl.parentElement) {
+                input = lbl.parentElement.querySelector('input:not([type="checkbox"]):not([type="radio"]), textarea');
+            }
+            // 5. Großeltern-Container (zwei Ebenen)
+            if (!input && lbl.parentElement && lbl.parentElement.parentElement) {
+                input = lbl.parentElement.parentElement.querySelector('input:not([type="checkbox"]):not([type="radio"]), textarea');
             }
             if (input) {
                 input.value = value;
@@ -148,82 +161,65 @@ $userName"""
         });
     }
 
-    // Setzt genau eine Checkbox/Radio anhand Label-Text, deaktiviert andere in derselben Gruppe nicht
-    function checkOnlyByLabel(keyword) {
-        document.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(function(cb) {
-            var label = '';
-            if (cb.id) {
-                var lbl = document.querySelector('label[for="' + cb.id + '"]');
-                if (lbl) label = lbl.innerText || lbl.textContent || '';
-            }
-            if (!label) {
-                var parent = cb.closest('label');
-                if (parent) label = parent.innerText || parent.textContent || '';
-            }
-            if ((label.toLowerCase()).indexOf(keyword.toLowerCase()) !== -1) {
-                if (!cb.checked) {
-                    cb.click();
-                    cb.dispatchEvent(new Event('change', {bubbles:true}));
-                }
-            }
+    // Liest den Label-Text einer Checkbox aus
+    function getCbLabel(cb) {
+        var label = '';
+        if (cb.id) {
+            var lbl = document.querySelector('label[for="' + cb.id + '"]');
+            if (lbl) label = lbl.innerText || lbl.textContent || '';
+        }
+        if (!label) {
+            var parent = cb.closest('label');
+            if (parent) label = parent.innerText || parent.textContent || '';
+        }
+        return label.toLowerCase().trim();
+    }
+
+    // Betreff-Checkboxen: nur Rezeptanforderung setzen, alle anderen deaktivieren
+    function handleBetreffCheckboxes() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+            var label = getCbLabel(cb);
+            var isRezept     = label.indexOf('rezeptanforderung') !== -1;
+            var isOtherBetreff = !isRezept && (
+                label.indexOf('befundanforderung') !== -1 ||
+                label.indexOf('laboranforderung') !== -1 ||
+                label.indexOf('anforderung') !== -1 ||
+                label.indexOf('sonstige') !== -1
+            );
+            if (isRezept && !cb.checked) { cb.click(); cb.dispatchEvent(new Event('change', {bubbles:true})); }
+            if (isOtherBetreff && cb.checked) { cb.click(); cb.dispatchEvent(new Event('change', {bubbles:true})); }
         });
     }
 
     // Datenschutz-Checkbox setzen
     function checkDatenschutz() {
         document.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
-            var label = '';
-            if (cb.id) {
-                var lbl = document.querySelector('label[for="' + cb.id + '"]');
-                if (lbl) label = lbl.innerText || lbl.textContent || '';
-            }
-            if (!label) {
-                var parent = cb.closest('label');
-                if (parent) label = parent.innerText || parent.textContent || '';
-            }
-            var lower = label.toLowerCase();
-            if (lower.indexOf('datenschutz') !== -1 || lower.indexOf('privacy') !== -1 || lower.indexOf('dsgvo') !== -1) {
-                if (!cb.checked) {
-                    cb.click();
-                    cb.dispatchEvent(new Event('change', {bubbles:true}));
-                }
+            var label = getCbLabel(cb);
+            if (label.indexOf('datenschutz') !== -1 || label.indexOf('privacy') !== -1 || label.indexOf('dsgvo') !== -1) {
+                if (!cb.checked) { cb.click(); cb.dispatchEvent(new Event('change', {bubbles:true})); }
             }
         });
     }
 
-    // Vorname — erst per Label, dann per Attribut
-    fillByLabel(['vorname', 'first name'], '$escapedFirstName');
-    fill([
-        'input[name*="vorname"]', 'input[id*="vorname"]',
-        'input[placeholder*="Vorname"]',
-        'input[name*="firstname"]', 'input[name*="first_name"]', 'input[id*="firstname"]'
-    ], '$escapedFirstName');
+    // Vorname
+    fillByLabel(['vorname'], '$escapedFirstName');
+    fill(['input[name*="vorname"]', 'input[id*="vorname"]', 'input[placeholder*="Vorname"]',
+          'input[name*="firstname"]', 'input[name*="first_name"]'], '$escapedFirstName');
 
-    // Nachname — erst per Label, dann per Attribut
-    fillByLabel(['nachname', 'last name', 'surname'], '$escapedLastName');
-    fill([
-        'input[name*="nachname"]', 'input[id*="nachname"]',
-        'input[placeholder*="Nachname"]',
-        'input[name*="lastname"]', 'input[name*="last_name"]',
-        'input[name*="surname"]', 'input[id*="lastname"]'
-    ], '$escapedLastName');
+    // Nachname
+    fillByLabel(['nachname'], '$escapedLastName');
+    fill(['input[name*="nachname"]', 'input[id*="nachname"]', 'input[placeholder*="Nachname"]',
+          'input[name*="lastname"]', 'input[name*="last_name"]', 'input[name*="surname"]'], '$escapedLastName');
 
     // Vollständiger Name (Fallback für kombinierte Felder)
-    fill([
-        'input[name="jform[contact_name]"]',
-        'input[name*="name"]',
-        'input[id*="name"]',
-        'input[placeholder*="Name"]'
-    ], '$escapedName');
+    fill(['input[name="jform[contact_name]"]', 'input[name*="name"]',
+          'input[id*="name"]', 'input[placeholder*="Name"]'], '$escapedName');
 
-    // Geburtsdatum — erst per Label, dann per Attribut
-    fillByLabel(['geburtsdatum', 'geboren', 'birthdate', 'birth date', 'date of birth'], '$escapedBirthdate');
-    fill([
-        'input[name*="geburtsdatum"]', 'input[id*="geburtsdatum"]',
-        'input[placeholder*="Geburtsdatum"]', 'input[placeholder*="geboren"]',
-        'input[name*="birthdate"]', 'input[name*="birth_date"]',
-        'input[name*="dob"]', 'input[id*="birthdate"]'
-    ], '$escapedBirthdate');
+    // Geburtsdatum
+    fillByLabel(['geburtsdatum'], '$escapedBirthdate');
+    fill(['input[name*="geburtsdatum"]', 'input[id*="geburtsdatum"]',
+          'input[placeholder*="Geburtsdatum"]', 'input[name*="birthdate"]',
+          'input[name*="birth_date"]', 'input[name*="dob"]'], '$escapedBirthdate');
 
     // E-Mail
     fill([
@@ -276,8 +272,8 @@ $userName"""
         });
     });
 
-    // Betreff-Checkbox: nur "Rezeptanforderung" setzen
-    checkOnlyByLabel('rezeptanforderung');
+    // Betreff-Checkboxen: nur Rezeptanforderung an, alle anderen aus
+    handleBetreffCheckboxes();
 
     // Datenschutz-Checkbox setzen
     checkDatenschutz();
