@@ -4,7 +4,8 @@
 #   curl -fsSL https://raw.githubusercontent.com/phipswithgrips/ClaudeCode/rezeptkiste/rezeptkiste/deploy/install.sh | bash -s -- rezepte.example.de admin
 #
 # Mehrfach ausführbar: Bereits Eingerichtetes bleibt erhalten, der Code wird aktualisiert.
-set -euo pipefail
+set -Eeuo pipefail
+trap 'printf "\\n\\033[1;31m[FEHLER]\\033[0m Abbruch in Zeile %s: %s\\n" "$LINENO" "$BASH_COMMAND"' ERR
 
 step() { printf '\n\033[1;33m==> %s\033[0m\n' "$*"; }
 ok()   { printf '\033[1;32m[OK]\033[0m %s\n' "$*"; }
@@ -83,7 +84,7 @@ fi
 DOMAIN=$(grep '^RK_DOMAIN=' "$ENV_FILE" | cut -d= -f2)
 
 step "Firewall: SSH, HTTP, HTTPS"
-SSH_PORT=$(sshd -T 2>/dev/null | awk '/^port /{print $2; exit}'); SSH_PORT=${SSH_PORT:-22}
+SSH_PORT=$( { sshd -T 2>/dev/null || true; } | awk '/^port /{print $2; exit}' || true); SSH_PORT=${SSH_PORT:-22}
 ufw allow "$SSH_PORT/tcp" >/dev/null
 ufw allow 80/tcp >/dev/null
 ufw allow 443/tcp >/dev/null
@@ -118,7 +119,7 @@ step "Nächtliches Backup einrichten"
 cat > /usr/local/bin/rezeptkiste-backup <<EOF
 #!/usr/bin/env bash
 # Datenbank und Fotos sichern; 14 Tage aufbewahren
-set -euo pipefail
+set -Eeuo pipefail
 cd $BASE/backup
 stamp=\$(date +%F)
 $COMPOSE exec -T db pg_dump -U rezeptkiste -Fc rezeptkiste > db-\$stamp.dump
@@ -132,7 +133,7 @@ ok "Backup täglich um 03:17 nach $BASE/backup"
 cat > /usr/local/bin/rezeptkiste-import <<EOF
 #!/usr/bin/env bash
 # Recipe-Keeper-Export importieren: rezeptkiste-import <datei.zip> [--commit]
-set -euo pipefail
+set -Eeuo pipefail
 f=\$(readlink -f "\$1"); shift
 cp "\$f" $BASE/import/
 $COMPOSE exec -T api python -m app.cli import-recipekeeper "/import/\$(basename "\$f")" "\$@"
@@ -148,7 +149,7 @@ chmod +x /usr/local/bin/rezeptkiste-update
 
 step "DNS und HTTPS prüfen"
 PUBLIC_IP=$(curl -fsS4 https://api.ipify.org || true)
-DNS_IP=$(getent ahostsv4 "$DOMAIN" | awk 'NR==1{print $1}')
+DNS_IP=$( { getent ahostsv4 "$DOMAIN" || true; } | awk 'NR==1{print $1}')
 if [ -n "$PUBLIC_IP" ] && [ "$DNS_IP" = "$PUBLIC_IP" ]; then
   ok "$DOMAIN zeigt auf diesen Server ($PUBLIC_IP)"
   for i in $(seq 1 20); do
