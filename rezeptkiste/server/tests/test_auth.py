@@ -36,3 +36,8 @@ def test_revoke_device(app_client):
     assert app_client.delete(f"/auth/devices/{win_id}", headers=pixel).status_code == 204
     assert app_client.get("/sync/pull", headers=windows).status_code == 401
     assert app_client.get("/sync/pull", headers=pixel).status_code == 200
+
+
+def test_status_page(app_client):
+    r = app_client.get("/")
+    assert r.status_code == 200 and "Der Server läuft" in r.text and "verbunden" in r.text
