@@ -46,13 +46,19 @@ class Repository(private val db: RezeptDatabase) {
 
     fun setting(key: String): String? = db.kvQueries.get(key).executeAsOneOrNull()
 
-    fun setSetting(key: String, value: String) = db.kvQueries.put(key, value)
+    fun setSetting(key: String, value: String) {
+        db.kvQueries.put(key, value)
+    }
 
-    fun removeSetting(key: String) = db.kvQueries.remove(key)
+    fun removeSetting(key: String) {
+        db.kvQueries.remove(key)
+    }
 
     var cursor: Long
         get() = setting(KEY_CURSOR)?.toLongOrNull() ?: 0L
-        set(value) = setSetting(KEY_CURSOR, value.toString())
+        set(value) {
+            setSetting(KEY_CURSOR, value.toString())
+        }
 
     /** Alles Lokale löschen, z. B. beim Abmelden. */
     fun clearAll() = db.transaction {
