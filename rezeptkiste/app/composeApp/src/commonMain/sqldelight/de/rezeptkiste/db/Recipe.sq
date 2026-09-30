@@ -1,0 +1,50 @@
+-- Rezepte. Felder entsprechen der Tabelle recipe auf dem Server; dirty ist nur lokal.
+CREATE TABLE recipe (
+    id TEXT NOT NULL PRIMARY KEY,
+    updated_at TEXT NOT NULL,
+    deleted INTEGER NOT NULL DEFAULT 0,
+    server_rev INTEGER NOT NULL DEFAULT 0,
+    dirty INTEGER NOT NULL DEFAULT 0,
+    title TEXT NOT NULL DEFAULT '',
+    description TEXT,
+    source_name TEXT,
+    source_url TEXT,
+    servings_text TEXT,
+    servings_count INTEGER,
+    prep_min INTEGER,
+    cook_min INTEGER,
+    total_min INTEGER,
+    ingredients_text TEXT,
+    directions_text TEXT,
+    notes TEXT,
+    nutrition TEXT,
+    rating INTEGER NOT NULL DEFAULT 0,
+    is_favourite INTEGER NOT NULL DEFAULT 0,
+    course_ids TEXT NOT NULL DEFAULT '[]',
+    category_ids TEXT NOT NULL DEFAULT '[]',
+    collection_ids TEXT NOT NULL DEFAULT '[]',
+    import_ref TEXT
+);
+
+CREATE INDEX recipe_dirty ON recipe(dirty);
+
+upsert:
+INSERT OR REPLACE INTO recipe VALUES ?;
+
+selectById:
+SELECT * FROM recipe WHERE id = ?;
+
+selectVisible:
+SELECT * FROM recipe WHERE deleted = 0 ORDER BY title COLLATE NOCASE;
+
+selectDirty:
+SELECT * FROM recipe WHERE dirty = 1;
+
+markClean:
+UPDATE recipe SET dirty = 0, server_rev = :rev WHERE id = :id AND updated_at = :updatedAt;
+
+setFavourite:
+UPDATE recipe SET is_favourite = :favourite, updated_at = :updatedAt, dirty = 1 WHERE id = :id;
+
+deleteAll:
+DELETE FROM recipe;

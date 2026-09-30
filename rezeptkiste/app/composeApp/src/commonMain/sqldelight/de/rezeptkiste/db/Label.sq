@@ -1,0 +1,31 @@
+-- Gänge, Kategorien und Sammlungen in einer Tabelle; kind = course | category | collection
+CREATE TABLE label (
+    id TEXT NOT NULL PRIMARY KEY,
+    kind TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    deleted INTEGER NOT NULL DEFAULT 0,
+    server_rev INTEGER NOT NULL DEFAULT 0,
+    dirty INTEGER NOT NULL DEFAULT 0,
+    name TEXT NOT NULL DEFAULT '',
+    sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX label_dirty ON label(dirty);
+
+upsert:
+INSERT OR REPLACE INTO label VALUES ?;
+
+selectById:
+SELECT * FROM label WHERE id = ?;
+
+selectVisible:
+SELECT * FROM label WHERE deleted = 0 ORDER BY kind, sort_order, name COLLATE NOCASE;
+
+selectDirty:
+SELECT * FROM label WHERE dirty = 1;
+
+markClean:
+UPDATE label SET dirty = 0, server_rev = :rev WHERE id = :id AND updated_at = :updatedAt;
+
+deleteAll:
+DELETE FROM label;

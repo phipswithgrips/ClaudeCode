@@ -1,0 +1,17 @@
+-- Lokale Einstellungen (Serveradresse, Sync-Cursor, Knotenname). Wird nicht synchronisiert.
+CREATE TABLE kv (
+    kv_key TEXT NOT NULL PRIMARY KEY,
+    kv_value TEXT NOT NULL
+);
+
+get:
+SELECT kv_value FROM kv WHERE kv_key = ?;
+
+put:
+INSERT OR REPLACE INTO kv(kv_key, kv_value) VALUES (?, ?);
+
+remove:
+DELETE FROM kv WHERE kv_key = ?;
+
+deleteAll:
+DELETE FROM kv;
