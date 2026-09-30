@@ -1,0 +1,60 @@
+# Produktivbetrieb auf einem eigenen VPS: API, PostgreSQL und Caddy (HTTPS mit Let's Encrypt).
+# Start: docker compose --env-file /opt/rezeptkiste/.env up -d --build
+services:
+  api:
+    build: ../server
+    restart: unless-stopped
+    environment:
+      RK_DATABASE_URL: postgresql+psycopg://rezeptkiste:${POSTGRES_PASSWORD:?}@db:5432/rezeptkiste
+      RK_FILES_DIR: /data/files
+      RK_ADMIN_USER: ${RK_ADMIN_USER:-admin}
+      RK_ADMIN_PASSWORD: ${RK_ADMIN_PASSWORD:-}
+      RK_MAX_UPLOAD_MB: "200"
+    volumes:
+      - files:/data/files
+      - ${RK_IMPORT_DIR:-/opt/rezeptkiste/import}:/import:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [internal]
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rezeptkiste
+      POSTGRES_USER: rezeptkiste
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rezeptkiste -d rezeptkiste"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [internal]
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      RK_DOMAIN: ${RK_DOMAIN:?}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [api]
+    networks: [internal]
+
+volumes:
+  pgdata:
+  files:
+  caddy_data:
+  caddy_config:
+
+networks:
+  internal:

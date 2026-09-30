@@ -46,6 +46,12 @@ jobs:
           RK_DATABASE_URL=postgresql+psycopg://postgres:test@localhost:5432/rk_migration alembic check
       - name: Docker-Image bauen
         run: docker build -t rezeptkiste-api:ci .
+      - name: VPS-Konfiguration prüfen (Compose, Caddy, Installationsskript)
+        working-directory: rezeptkiste/deploy
+        run: |
+          RK_DOMAIN=rezepte.example.de POSTGRES_PASSWORD=x docker compose -f docker-compose.yml config -q
+          docker run --rm -e RK_DOMAIN=rezepte.example.de -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2 caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+          bash -n install.sh
 
   android:
     name: Android-APK und Tests
