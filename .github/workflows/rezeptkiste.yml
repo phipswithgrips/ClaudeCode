@@ -98,6 +98,20 @@ jobs:
       - name: MSI bauen
         shell: bash
         run: ci/gradle.sh :composeApp:packageMsi
+      - name: Selbsttest der fertigen App (Laufzeit, HTTPS, SQLite, DPAPI)
+        shell: bash
+        run: |
+          exe=composeApp/build/compose/binaries/main/app/Rezeptkiste/Rezeptkiste.exe
+          set +e
+          "$exe" --selftest "$PWD/selftest.txt"
+          code=$?
+          set -e
+          cat selftest.txt || true
+          msg=$(sed 's/%/%25/g' selftest.txt 2>/dev/null | awk 'BEGIN{ORS="%0A"}{print}')
+          if [ "$code" -ne 0 ]; then echo "::error title=Selbsttest::exit $code%0A$msg"; exit 1; fi
+          echo "::notice title=Selbsttest::$msg"
+          size=$(du -m composeApp/build/compose/binaries/main/msi/*.msi | cut -f1)
+          echo "::notice title=MSI-Größe::${size} MB"
       - uses: actions/upload-artifact@v4
         with:
           name: rezeptkiste-windows-msi

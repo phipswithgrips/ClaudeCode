@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <rect width="256" height="256" rx="56" fill="#D9622B"/>
+  <!-- Karteikarten -->
+  <rect x="70" y="52" width="116" height="92" rx="8" fill="#FFFFFF" opacity="0.55" transform="rotate(-8 128 98)"/>
+  <rect x="70" y="58" width="116" height="92" rx="8" fill="#FFFFFF"/>
+  <rect x="86" y="78" width="60" height="8" rx="4" fill="#D9622B"/>
+  <rect x="86" y="96" width="84" height="6" rx="3" fill="#E9A27F"/>
+  <rect x="86" y="110" width="72" height="6" rx="3" fill="#E9A27F"/>
+  <!-- Kiste -->
+  <path d="M48 128 H208 L196 204 Q194 212 186 212 H70 Q62 212 60 204 Z" fill="#202020"/>
+  <rect x="110" y="150" width="36" height="10" rx="5" fill="#D9622B"/>
+</svg>

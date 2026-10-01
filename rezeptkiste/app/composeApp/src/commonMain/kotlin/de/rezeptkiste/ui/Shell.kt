@@ -23,7 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
@@ -233,9 +232,6 @@ private fun NavPane(controller: AppController, expanded: Boolean, onToggle: () -
         NavItem(Icons.Filled.Home, "Start", screen is Screen.Start || screen is Screen.Course || screen is Screen.Recipes || screen is Screen.Detail, expanded) { open(Screen.Start) }
         NavItem(Icons.AutoMirrored.Filled.List, "Einkaufsliste", (screen as? Screen.Placeholder)?.title == "Einkaufsliste", expanded) {
             open(Screen.Placeholder("Einkaufsliste", "Die Einkaufsliste mit Sortierung nach Gängen im Markt kommt in Version 2."))
-        }
-        NavItem(Icons.Filled.DateRange, "Speiseplan", (screen as? Screen.Placeholder)?.title == "Speiseplan", expanded) {
-            open(Screen.Placeholder("Speiseplan", "Der Wochen- und Monatsplaner kommt in Version 2."))
         }
         NavItem(Icons.Outlined.Create, "Kochbücher", (screen as? Screen.Placeholder)?.title == "Kochbücher", expanded) {
             open(Screen.Placeholder("Kochbücher", "Kochbücher als PDF mit Deckblatt und Inhaltsverzeichnis kommen in Version 2."))

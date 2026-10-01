@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <rect width="256" height="256" rx="56" fill="#202020"/>
+  <circle cx="128" cy="128" r="86" fill="#D9622B"/>
+  <!-- Löffel und Gabel -->
+  <g fill="#FFFFFF">
+    <ellipse cx="106" cy="96" rx="15" ry="24"/>
+    <rect x="102" y="112" width="8" height="78" rx="4"/>
+    <rect x="140" y="70" width="5" height="34" rx="2.5"/>
+    <rect x="150" y="70" width="5" height="34" rx="2.5"/>
+    <rect x="160" y="70" width="5" height="34" rx="2.5"/>
+    <path d="M138 100 H167 V108 Q167 120 156 122 H149 Q138 120 138 108 Z"/>
+    <rect x="148" y="118" width="9" height="72" rx="4.5"/>
+  </g>
+</svg>

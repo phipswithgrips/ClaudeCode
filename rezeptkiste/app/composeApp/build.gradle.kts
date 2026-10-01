@@ -93,11 +93,17 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Msi)
             packageName = "Rezeptkiste"
-            packageVersion = "1.0.0"
+            // Jede CI-Version ist höher als die vorige, damit das MSI die alte Installation ersetzt
+            packageVersion = "1.0.${System.getenv("GITHUB_RUN_NUMBER") ?: "0"}"
             description = "Rezeptverwaltung mit Sync"
             vendor = "Rezeptkiste"
-            includeAllModules = true
+            // Nur die benötigten Teile der Java-Laufzeit; der Selbsttest im CI prüft, dass nichts fehlt
+            modules(
+                "java.sql", "java.logging", "java.naming", "java.management", "java.net.http",
+                "jdk.unsupported", "jdk.crypto.ec", "jdk.charsets", "jdk.accessibility",
+            )
             windows {
+                iconFile.set(project.file("../icons/rezeptkiste.ico"))
                 menuGroup = "Rezeptkiste"
                 shortcut = true
                 perUserInstall = true
