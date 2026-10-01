@@ -27,6 +27,10 @@ APK und MSI liegen danach unter **Actions** beim jeweiligen Lauf als Artefakte z
 - [ ] Schritt 6: Web- und Scan-Import (Text- und Recipe-Keeper-Import sind fertig)
 - [ ] Schritt 7: Signierte APK, Backup, Monitoring
 
+## Offen
+
+- Rezepteingabe neu gestalten: funktioniert im Test auf Android und Windows nicht und soll klüger, einfacher und schöner werden (Rückmeldung vom 01.10.2026, wird später aufgegriffen)
+
 ## App installieren
 
 - **Android:** `composeApp-debug.apk` aus dem Artefakt `cookfolio-android-apk` auf das Gerät laden und öffnen. Einmalig die Installation aus dieser Quelle erlauben.
