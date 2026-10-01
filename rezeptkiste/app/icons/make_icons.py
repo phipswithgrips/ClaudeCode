@@ -24,7 +24,7 @@ def render(src: str, size: int) -> Image.Image:
 
 # Windows und Fenster
 big = render(svg, 256)
-big.save(ROOT / "icons" / "rezeptkiste.ico", sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
+big.save(ROOT / "icons" / "cookfolio.ico", sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
 res = ROOT / "composeApp" / "src" / "desktopMain" / "resources"
 res.mkdir(parents=True, exist_ok=True)
 big.save(res / "icon.png")

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Dunkler Fensterhintergrund, damit beim Start nichts hell aufblitzt -->
-    <style name="Theme.Rezeptkiste" parent="android:Theme.Material.NoActionBar">
+    <style name="Theme.Cookfolio" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/rk_background</item>
         <item name="android:colorBackground">@color/rk_background</item>
     </style>
 
-    <color name="rk_background">#FF121212</color>
+    <color name="rk_background">#FF202020</color>
 </resources>

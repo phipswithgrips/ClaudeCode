@@ -1,4 +1,4 @@
-name: Rezeptkiste
+name: Cookfolio
 
 on:
   push:
@@ -72,7 +72,7 @@ jobs:
         run: ci/gradle.sh :composeApp:assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: rezeptkiste-android-apk
+          name: cookfolio-android-apk
           path: rezeptkiste/app/composeApp/build/outputs/apk/debug/composeApp-debug.apk
           retention-days: 30
       - uses: actions/upload-artifact@v4
@@ -101,7 +101,7 @@ jobs:
       - name: Selbsttest der fertigen App (Laufzeit, HTTPS, SQLite, DPAPI)
         shell: bash
         run: |
-          exe=$(find composeApp/build/compose/binaries -name Rezeptkiste.exe | head -n 1)
+          exe=$(find composeApp/build/compose/binaries -name Cookfolio.exe | head -n 1)
           echo "App: $exe"
           set +e
           # Windows-Pfad übergeben; Java versteht /d/a/... aus Git Bash nicht
@@ -117,6 +117,6 @@ jobs:
           echo "::notice title=MSI-Größe::${size} MB"
       - uses: actions/upload-artifact@v4
         with:
-          name: rezeptkiste-windows-msi
+          name: cookfolio-windows-msi
           path: rezeptkiste/app/composeApp/build/compose/binaries/main/msi/*.msi
           retention-days: 30

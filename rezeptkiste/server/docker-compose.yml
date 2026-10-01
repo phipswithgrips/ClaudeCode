@@ -1,4 +1,4 @@
-# Rezeptkiste-Server. Nginx Proxy Manager leitet rezepte.<domain> auf api:8000.
+# Cookfolio-Server. Nginx Proxy Manager leitet rezepte.<domain> auf api:8000.
 services:
   api:
     image: rezeptkiste-api:latest

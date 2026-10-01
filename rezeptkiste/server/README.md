@@ -1,6 +1,6 @@
-# Rezeptkiste - Server
+# Cookfolio - Server
 
-Sync-, Datei- und Import-Server für die Rezeptkiste-Apps (Android, Windows). FastAPI, PostgreSQL 17, Docker Compose.
+Sync-, Datei- und Import-Server für die Cookfolio-Apps (Android, Windows). FastAPI, PostgreSQL 17, Docker Compose.
 
 Stand: Umsetzungsschritte 1 und 2 der Spezifikation (Server-Grundgerüst, Recipe-Keeper-Import).
 

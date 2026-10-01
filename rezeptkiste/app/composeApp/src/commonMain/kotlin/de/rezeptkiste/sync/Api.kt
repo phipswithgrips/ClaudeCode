@@ -31,7 +31,7 @@ open class ApiException(message: String, val status: Int? = null) : Exception(me
 
 class UnauthorizedException : ApiException("Anmeldung abgelaufen oder Gerät gesperrt.", 401)
 
-/** Zugriff auf die Rezeptkiste-API. */
+/** Zugriff auf die Cookfolio-API. */
 class Api(
     baseUrl: String,
     private val token: () -> String?,

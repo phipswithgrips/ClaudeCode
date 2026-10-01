@@ -24,11 +24,11 @@ _SHA = re.compile(r"^[0-9a-f]{64}$")
 # --- Zustand -----------------------------------------------------------------
 
 _STATUS_PAGE = """<!doctype html><html lang="de"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>Rezeptkiste</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Cookfolio</title>
 <style>body{{margin:0;background:#121212;color:#EDEDED;font:16px/1.5 system-ui,sans-serif;display:grid;place-items:center;min-height:100vh}}
 main{{background:#1E1E1E;border-radius:12px;padding:32px 40px;max-width:520px}}h1{{color:#F26B2A;margin:0 0 8px}}
 p{{color:#A0A0A0;margin:8px 0}}b{{color:#EDEDED}}a{{color:#F26B2A}}</style></head>
-<body><main><h1>Rezeptkiste</h1><p>Der Server läuft. Datenbank: <b>{db}</b></p>
+<body><main><h1>Cookfolio</h1><p>Der Server läuft. Datenbank: <b>{db}</b></p>
 <p>Diese Adresse ist für die Apps gedacht: In der Android- und der Windows-App als Server-Adresse eintragen.</p>
 <p><a href="/docs">API-Dokumentation</a></p></main></body></html>"""
 

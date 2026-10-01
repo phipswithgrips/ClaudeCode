@@ -217,7 +217,7 @@ private fun ImportTab(controller: AppController) {
 @Composable
 private fun InfoTab(controller: AppController) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text("Rezeptkiste", style = MaterialTheme.typography.headlineSmall, color = accent)
+        Text("Cookfolio", style = MaterialTheme.typography.headlineSmall, color = accent)
         Text("Version 0.2.0")
         Text("Private Rezeptverwaltung mit Synchronisierung über den eigenen Server.", color = RkColors.TextSecondary)
         Spacer(Modifier.size(4.dp))

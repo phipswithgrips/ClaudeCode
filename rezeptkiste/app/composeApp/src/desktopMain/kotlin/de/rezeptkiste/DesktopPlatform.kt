@@ -20,10 +20,13 @@ import java.io.File
 import java.net.InetAddress
 import java.security.MessageDigest
 
-/** Datenordner: %APPDATA%\Rezeptkiste unter Windows, sonst ~/.rezeptkiste. */
+/** Datenordner: %APPDATA%\Cookfolio unter Windows, sonst ~/.cookfolio. Übernimmt den alten Ordner "Rezeptkiste". */
 fun appDataDir(): File {
     val appData = System.getenv("APPDATA")
-    val dir = if (!appData.isNullOrBlank()) File(appData, "Rezeptkiste") else File(System.getProperty("user.home"), ".rezeptkiste")
+    val base = if (!appData.isNullOrBlank()) File(appData) else File(System.getProperty("user.home"))
+    val dir = File(base, if (appData.isNullOrBlank()) ".cookfolio" else "Cookfolio")
+    val old = File(base, if (appData.isNullOrBlank()) ".rezeptkiste" else "Rezeptkiste")
+    if (!dir.exists() && old.isDirectory) old.renameTo(dir)
     dir.mkdirs()
     return dir
 }

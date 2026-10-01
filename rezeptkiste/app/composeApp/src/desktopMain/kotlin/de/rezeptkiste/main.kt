@@ -32,7 +32,7 @@ fun main(args: Array<String>) {
         val icon = remember { appIcon()?.let { BitmapPainter(it.toComposeImageBitmap()) } }
         Window(
             onCloseRequest = ::exitApplication,
-            title = "Rezeptkiste",
+            title = "Cookfolio",
             icon = icon,
             state = rememberWindowState(size = DpSize(1320.dp, 860.dp)),
         ) {
@@ -47,7 +47,7 @@ fun main(args: Array<String>) {
 /**
  * Prüft im fertigen Installationspaket, ob die verkleinerte Java-Laufzeit alles enthält:
  * SQLite (java.sql), HTTPS mit modernen Zertifikaten (jdk.crypto.ec), Bilder, DPAPI.
- * Aufruf im CI: Rezeptkiste.exe --selftest <Ergebnisdatei>
+ * Aufruf im CI: Cookfolio.exe --selftest <Ergebnisdatei>
  */
 private fun selfTest(out: String?) {
     val results = mutableListOf<String>()

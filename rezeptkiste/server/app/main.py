@@ -1,4 +1,4 @@
-"""Einstiegspunkt der Rezeptkiste-API."""
+"""Einstiegspunkt der Cookfolio-API."""
 
 import logging
 from contextlib import asynccontextmanager
@@ -21,7 +21,7 @@ async def lifespan(app: FastAPI):
 
 def create_app(run_bootstrap: bool = True) -> FastAPI:
     app = FastAPI(
-        title="Rezeptkiste API",
+        title="Cookfolio API",
         version="0.1.0",
         lifespan=lifespan if run_bootstrap else None,
     )

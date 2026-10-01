@@ -92,19 +92,19 @@ compose.desktop {
         mainClass = "de.rezeptkiste.MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Msi)
-            packageName = "Rezeptkiste"
+            packageName = "Cookfolio"
             // Jede CI-Version ist höher als die vorige, damit das MSI die alte Installation ersetzt
             packageVersion = "1.0.${System.getenv("GITHUB_RUN_NUMBER") ?: "0"}"
             description = "Rezeptverwaltung mit Sync"
-            vendor = "Rezeptkiste"
+            vendor = "Cookfolio"
             // Nur die benötigten Teile der Java-Laufzeit; der Selbsttest im CI prüft, dass nichts fehlt
             modules(
                 "java.sql", "java.logging", "java.naming", "java.management", "java.net.http",
                 "jdk.unsupported", "jdk.crypto.ec", "jdk.charsets", "jdk.accessibility",
             )
             windows {
-                iconFile.set(project.file("../icons/rezeptkiste.ico"))
-                menuGroup = "Rezeptkiste"
+                iconFile.set(project.file("../icons/cookfolio.ico"))
+                menuGroup = "Cookfolio"
                 shortcut = true
                 perUserInstall = true
                 dirChooser = true

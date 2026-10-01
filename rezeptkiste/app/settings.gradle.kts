@@ -1,4 +1,4 @@
-rootProject.name = "Rezeptkiste"
+rootProject.name = "Cookfolio"
 
 pluginManagement {
     repositories {

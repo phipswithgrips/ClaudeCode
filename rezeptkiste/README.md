@@ -1,6 +1,6 @@
-# Rezeptkiste
+# Cookfolio
 
-Private Rezeptverwaltung für Android und Windows mit Synchronisation über einen eigenen Server. Funktional an Recipe Keeper angelehnt, mit eigenem Namen, eigenem Design und dunklem Farbschema. Nicht für die kommerzielle Nutzung gedacht.
+Cookfolio ist eine private Rezeptverwaltung für Android und Windows mit Synchronisation über einen eigenen Server. Funktional an Recipe Keeper angelehnt, mit eigenem Namen, eigenem Design und dunklem Farbschema. Nicht für die kommerzielle Nutzung gedacht.
 
 | Ordner | Inhalt |
 | --- | --- |
@@ -29,7 +29,7 @@ APK und MSI liegen danach unter **Actions** beim jeweiligen Lauf als Artefakte z
 
 ## App installieren
 
-- **Android:** `composeApp-debug.apk` aus dem Artefakt `rezeptkiste-android-apk` auf das Gerät laden und öffnen. Einmalig die Installation aus dieser Quelle erlauben.
-- **Windows:** `Rezeptkiste-1.0.0.msi` aus dem Artefakt `rezeptkiste-windows-msi` ausführen. Die Installation erfolgt für den aktuellen Benutzer und benötigt keine Administratorrechte. Da der Installer nicht signiert ist, zeigt SmartScreen beim ersten Start eine Warnung: "Weitere Informationen", dann "Trotzdem ausführen".
+- **Android:** `composeApp-debug.apk` aus dem Artefakt `cookfolio-android-apk` auf das Gerät laden und öffnen. Einmalig die Installation aus dieser Quelle erlauben.
+- **Windows:** `Cookfolio-1.0.<Build>.msi` aus dem Artefakt `cookfolio-windows-msi` ausführen. Die Installation erfolgt für den aktuellen Benutzer und benötigt keine Administratorrechte. Da der Installer nicht signiert ist, zeigt SmartScreen beim ersten Start eine Warnung: "Weitere Informationen", dann "Trotzdem ausführen".
 
 Beim ersten Start fragt die App nach Server-Adresse, Benutzername, Passwort und Gerätename.
