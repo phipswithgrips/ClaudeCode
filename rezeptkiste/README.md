@@ -27,6 +27,13 @@ APK und MSI liegen danach unter **Actions** beim jeweiligen Lauf als Artefakte z
 - [ ] Schritt 6: Web-, Text- und Scan-Import
 - [ ] Schritt 7: Signierte APK, Backup, Monitoring
 
+## Für die nächste Version vorgemerkt
+
+- **Windows-Installer signieren.** Beim Ausführen von `Cookfolio-1.0.13.msi` meldet SmartScreen "Der Computer wurde durch Windows geschützt" mit "Herausgeber: Unbekannter Herausgeber". MSI und `Cookfolio.exe` sollen deshalb im CI-Lauf mit `signtool` signiert werden. Möglichkeiten:
+  - eigenes Zertifikat, einmalig auf dem eigenen PC als vertrauenswürdig importiert (kostenlos; die Warnung verschwindet nur auf diesem PC)
+  - Azure Trusted Signing (ca. 10 $ im Monat; der Herausgeber wird angezeigt, und SmartScreen-Vertrauen baut sich auf)
+  - gekauftes Code-Signing-Zertifikat (OV/EV, ca. 200–400 $ im Jahr)
+
 ## App installieren
 
 - **Android:** `composeApp-debug.apk` aus dem Artefakt `cookfolio-android-apk` auf das Gerät laden und öffnen. Einmalig die Installation aus dieser Quelle erlauben.
