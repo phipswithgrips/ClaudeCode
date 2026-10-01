@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.filled.Info
 import de.rezeptkiste.AppController
 import de.rezeptkiste.NONE
 import de.rezeptkiste.RecipeQuery

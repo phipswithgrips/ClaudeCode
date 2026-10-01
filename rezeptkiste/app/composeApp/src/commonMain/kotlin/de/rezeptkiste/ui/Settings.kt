@@ -77,7 +77,7 @@ private fun Appearance(controller: AppController) {
     Column(Modifier.verticalScroll(rememberScrollState())) {
         Text("Wählen Sie ein Farbschema", style = MaterialTheme.typography.titleMedium)
         VSpace(6.dp)
-        FlowRow(Modifier.width(5 * 48.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        FlowRow(Modifier.width(240.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             RkColors.AccentChoices.forEach { c ->
                 Box(
                     Modifier.size(42.dp).clip(RoundedCornerShape(2.dp)).background(Color(c))
