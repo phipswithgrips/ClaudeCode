@@ -97,11 +97,12 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: MSI bauen
         shell: bash
-        run: ci/gradle.sh :composeApp:packageMsi
+        run: ci/gradle.sh :composeApp:packageMsi :composeApp:createDistributable
       - name: Selbsttest der fertigen App (Laufzeit, HTTPS, SQLite, DPAPI)
         shell: bash
         run: |
-          exe=composeApp/build/compose/binaries/main/app/Rezeptkiste/Rezeptkiste.exe
+          exe=$(find composeApp/build/compose/binaries -name Rezeptkiste.exe | head -n 1)
+          echo "App: $exe"
           set +e
           # Windows-Pfad übergeben; Java versteht /d/a/... aus Git Bash nicht
           "$exe" --selftest "$(cygpath -w "$PWD")\\selftest.txt"
