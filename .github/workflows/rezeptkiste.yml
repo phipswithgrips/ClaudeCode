@@ -103,11 +103,13 @@ jobs:
         run: |
           exe=composeApp/build/compose/binaries/main/app/Rezeptkiste/Rezeptkiste.exe
           set +e
-          "$exe" --selftest "$PWD/selftest.txt"
+          # Windows-Pfad übergeben; Java versteht /d/a/... aus Git Bash nicht
+          "$exe" --selftest "$(cygpath -w "$PWD")\\selftest.txt"
           code=$?
           set -e
-          cat selftest.txt || true
-          msg=$(sed 's/%/%25/g' selftest.txt 2>/dev/null | awk 'BEGIN{ORS="%0A"}{print}')
+          [ -f selftest.txt ] || echo "keine Ergebnisdatei" > selftest.txt
+          cat selftest.txt
+          msg=$(sed 's/%/%25/g' selftest.txt | awk 'BEGIN{ORS="%0A"}{print}')
           if [ "$code" -ne 0 ]; then echo "::error title=Selbsttest::exit $code%0A$msg"; exit 1; fi
           echo "::notice title=Selbsttest::$msg"
           size=$(du -m composeApp/build/compose/binaries/main/msi/*.msi | cut -f1)
