@@ -1,19 +1,29 @@
 package de.rezeptkiste
 
+import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Build
+import android.provider.OpenableColumns
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalView
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import de.rezeptkiste.db.RezeptDatabase
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.security.KeyStore
+import java.security.MessageDigest
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -30,14 +40,23 @@ class AndroidPlatform(private val context: Context) : PlatformServices {
         .joinToString(" ")
         .ifBlank { "Android" }
 
+    override val isDesktop: Boolean = false
+
     override fun nowMillis(): Long = System.currentTimeMillis()
 
-    private val cacheRoot = File(context.cacheDir, "images")
+    override fun sha256(bytes: ByteArray): String =
+        MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
 
-    override fun readCache(name: String): ByteArray? = File(cacheRoot, name).takeIf { it.isFile }?.readBytes()
+    private val cacheRoot = File(context.cacheDir, "images")
+    // Neue, noch nicht hochgeladene Fotos dürfen nicht im löschbaren Cache liegen
+    private val originals = File(context.filesDir, "originals")
+
+    private fun fileFor(name: String) = if (name.startsWith("original/")) File(originals, name.removePrefix("original/")) else File(cacheRoot, name)
+
+    override fun readCache(name: String): ByteArray? = fileFor(name).takeIf { it.isFile }?.readBytes()
 
     override fun writeCache(name: String, bytes: ByteArray) {
-        val f = File(cacheRoot, name)
+        val f = fileFor(name)
         f.parentFile?.mkdirs()
         val tmp = File(f.parentFile, f.name + ".tmp")
         tmp.writeBytes(bytes)
@@ -46,14 +65,70 @@ class AndroidPlatform(private val context: Context) : PlatformServices {
 
     override fun clearCache() {
         cacheRoot.deleteRecursively()
+        originals.deleteRecursively()
     }
 
     override fun decodeImage(bytes: ByteArray): ImageBitmap? =
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
 
+    // --- Dateiauswahl über die Activity ---------------------------------------------------
+
+    /** Von MainActivity gesetzt: startet den System-Dateiauswahldialog mit MIME-Typ. */
+    var launchPicker: ((String) -> Unit)? = null
+    private var pending: CompletableDeferred<Uri?>? = null
+
+    fun onPicked(uri: Uri?) {
+        pending?.complete(uri)
+        pending = null
+    }
+
+    override suspend fun pickFile(kind: FileKind): PickedFile? {
+        val launch = launchPicker ?: return null
+        val deferred = CompletableDeferred<Uri?>()
+        pending = deferred
+        launch(
+            when (kind) {
+                FileKind.IMAGE -> "image/*"
+                FileKind.ZIP -> "application/zip"
+                FileKind.TEXT -> "text/*"
+            },
+        )
+        val uri = deferred.await() ?: return null
+        return withContext(Dispatchers.IO) {
+            val name = context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
+                if (c.moveToFirst()) c.getString(0) else null
+            } ?: "datei"
+            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return@withContext null
+            PickedFile(name, bytes)
+        }
+    }
+
+    override fun shareText(title: String, text: String) {
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, title)
+            putExtra(Intent.EXTRA_TEXT, text)
+        }
+        context.startActivity(Intent.createChooser(send, "Rezept teilen").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
+
+    override fun clipboardText(): String? {
+        val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        return cm.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(context)?.toString()
+    }
+
     @Composable
     override fun BackHandler(enabled: Boolean, onBack: () -> Unit) {
         androidx.activity.compose.BackHandler(enabled = enabled, onBack = onBack)
+    }
+
+    @Composable
+    override fun KeepScreenOn(enabled: Boolean) {
+        val view = LocalView.current
+        DisposableEffect(enabled) {
+            view.keepScreenOn = enabled
+            onDispose { view.keepScreenOn = false }
+        }
     }
 }
 

@@ -74,6 +74,25 @@ class Repository(private val db: RezeptDatabase) {
         db.recipeQueries.setFavourite(favourite.toLong(), updatedAt, id)
     }
 
+    /** Rezept lokal speichern; geht beim nächsten Sync an den Server. */
+    fun saveRecipe(recipe: Recipe) {
+        db.recipeQueries.upsert(recipe.copy(dirty = 1))
+    }
+
+    fun saveLabel(label: Label) {
+        db.labelQueries.upsert(label.copy(dirty = 1))
+    }
+
+    fun label(id: String): Label? = db.labelQueries.selectById(id).executeAsOneOrNull()
+
+    fun savePhoto(photo: Photo) {
+        db.photoQueries.upsert(photo.copy(dirty = 1))
+    }
+
+    fun photo(id: String): Photo? = db.photoQueries.selectById(id).executeAsOneOrNull()
+
+    fun transaction(block: () -> Unit) = db.transaction { block() }
+
     // --- Sync: Push --------------------------------------------------------------
 
     fun dirtyRecords(): List<SyncRecord> = buildList {

@@ -7,7 +7,11 @@ import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.forms.formData
+import io.ktor.client.request.forms.submitFormWithBinaryData
 import io.ktor.client.request.get
+import io.ktor.client.request.head
+import io.ktor.client.request.put
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
@@ -84,6 +88,35 @@ class Api(
         }
         if (res.status == HttpStatusCode.NotFound) return null
         return check(res).body()
+    }
+
+    suspend fun fileExists(sha256: String): Boolean {
+        val res = client.head("$baseUrl/files/$sha256") { auth() }
+        if (res.status == HttpStatusCode.Unauthorized) throw UnauthorizedException()
+        return res.status.isSuccess()
+    }
+
+    suspend fun putFile(sha256: String, bytes: ByteArray) {
+        val res = client.put("$baseUrl/files/$sha256") {
+            auth()
+            contentType(ContentType.Application.OctetStream)
+            setBody(bytes)
+        }
+        check(res)
+    }
+
+    /** Recipe-Keeper-Export hochladen und importieren; liefert die Antwort des Servers als Text. */
+    suspend fun importRecipeKeeper(fileName: String, bytes: ByteArray): String {
+        val res = client.submitFormWithBinaryData(
+            url = "$baseUrl/import/recipekeeper?commit=true",
+            formData = formData {
+                append("file", bytes, io.ktor.http.Headers.build {
+                    append(HttpHeaders.ContentType, "application/zip")
+                    append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
+                })
+            },
+        ) { auth() }
+        return check(res).bodyAsText()
     }
 
     private suspend fun check(res: HttpResponse): HttpResponse {

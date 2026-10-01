@@ -51,7 +51,7 @@ fun LoginScreen(controller: AppController) {
             color = MaterialTheme.colorScheme.surface,
         ) {
             Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Rezeptkiste", style = MaterialTheme.typography.headlineMedium, color = RkColors.Accent)
+                Text("Rezeptkiste", style = MaterialTheme.typography.headlineMedium, color = accent)
                 Text(
                     "Mit deinem Server verbinden. Die Rezepte werden danach auf diesem Gerät gespeichert und funktionieren auch offline.",
                     style = MaterialTheme.typography.bodyMedium,

@@ -8,8 +8,17 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.sun.jna.platform.win32.Crypt32Util
 import de.rezeptkiste.db.RezeptDatabase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.swing.Swing
+import kotlinx.coroutines.withContext
+import java.awt.FileDialog
+import java.awt.Frame
+import java.awt.Toolkit
+import java.awt.datatransfer.DataFlavor
+import java.awt.datatransfer.StringSelection
 import java.io.File
 import java.net.InetAddress
+import java.security.MessageDigest
 
 /** Datenordner: %APPDATA%\Rezeptkiste unter Windows, sonst ~/.rezeptkiste. */
 fun appDataDir(): File {
@@ -46,7 +55,42 @@ class DesktopPlatform(private val dataDir: File = appDataDir()) : PlatformServic
     override val defaultDeviceName: String =
         runCatching { InetAddress.getLocalHost().hostName }.getOrNull()?.takeIf { it.isNotBlank() } ?: if (isWindows) "Windows-PC" else "Desktop"
 
+    override val isDesktop: Boolean = true
+
     override fun nowMillis(): Long = System.currentTimeMillis()
+
+    override fun sha256(bytes: ByteArray): String =
+        MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+
+    /** Wird von main() gesetzt, damit der Dialog vor dem App-Fenster erscheint. */
+    var window: Frame? = null
+
+    override suspend fun pickFile(kind: FileKind): PickedFile? = withContext(Dispatchers.Swing) {
+        val dialog = FileDialog(window, "Datei auswählen", FileDialog.LOAD)
+        val exts = when (kind) {
+            FileKind.IMAGE -> listOf(".jpg", ".jpeg", ".png", ".webp", ".gif")
+            FileKind.ZIP -> listOf(".zip")
+            FileKind.TEXT -> listOf(".txt", ".md", ".text")
+        }
+        dialog.file = exts.joinToString(";") { "*$it" }
+        dialog.setFilenameFilter { _, name -> exts.any { name.lowercase().endsWith(it) } }
+        dialog.isVisible = true
+        val name = dialog.file ?: return@withContext null
+        val f = File(dialog.directory, name)
+        withContext(Dispatchers.IO) { PickedFile(f.name, f.readBytes()) }
+    }
+
+    override fun shareText(title: String, text: String) {
+        Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(text), null)
+        onShared?.invoke()
+    }
+
+    /** Hinweis an die Oberfläche nach dem Kopieren (gesetzt von der App). */
+    var onShared: (() -> Unit)? = null
+
+    override fun clipboardText(): String? = runCatching {
+        Toolkit.getDefaultToolkit().systemClipboard.getData(DataFlavor.stringFlavor) as? String
+    }.getOrNull()
 
     private val cacheRoot = File(dataDir, "cache")
 
@@ -72,6 +116,9 @@ class DesktopPlatform(private val dataDir: File = appDataDir()) : PlatformServic
 
     @Composable
     override fun BackHandler(enabled: Boolean, onBack: () -> Unit) = Unit
+
+    @Composable
+    override fun KeepScreenOn(enabled: Boolean) = Unit
 }
 
 /**

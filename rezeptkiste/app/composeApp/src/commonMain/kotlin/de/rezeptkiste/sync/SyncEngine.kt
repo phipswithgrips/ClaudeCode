@@ -15,13 +15,26 @@ class SyncEngine(
     private val repo: Repository,
     private val hlc: Hlc,
     private val pageSize: Int = 500,
+    /** Liefert die Bilddatei eines neuen Fotos aus dem lokalen Speicher. */
+    private val localFile: (String) -> ByteArray? = { null },
 ) {
     private val mutex = Mutex()
 
     suspend fun sync(): SyncResult = mutex.withLock {
+        uploadPhotos()
         val (pushed, rejected, errors) = push()
         val pulled = pull()
         SyncResult(pushed, rejected, errors, pulled)
+    }
+
+    /** Bilddateien neuer Fotos hochladen, bevor ihre Datensätze gepusht werden. */
+    private suspend fun uploadPhotos() {
+        for (rec in repo.dirtyRecords().filter { it.type == EntityType.PHOTO && !it.deleted }) {
+            val sha = rec.data["sha256"]?.toString()?.trim('"') ?: continue
+            if (api.fileExists(sha)) continue
+            val bytes = localFile(sha) ?: continue
+            api.putFile(sha, bytes)
+        }
     }
 
     private suspend fun push(): Triple<Int, Int, Int> {
