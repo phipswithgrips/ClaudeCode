@@ -147,6 +147,11 @@ curl -fsSL https://raw.githubusercontent.com/phipswithgrips/ClaudeCode/$BRANCH/r
 EOF
 chmod +x /usr/local/bin/rezeptkiste-update
 
+# Die App heißt Cookfolio: gleiche Befehle unter neuem Namen (die alten bleiben gültig)
+for cmd in update import backup; do
+  ln -sf /usr/local/bin/rezeptkiste-$cmd /usr/local/bin/cookfolio-$cmd
+done
+
 step "DNS und HTTPS prüfen"
 PUBLIC_IP=$(curl -fsS4 https://api.ipify.org || true)
 DNS_IP=$( { getent ahostsv4 "$DOMAIN" || true; } | awk 'NR==1{print $1}')
@@ -168,14 +173,14 @@ for zip in /root/RecipeKeeper*.zip; do
   if [ -z "$(docker exec rezeptkiste-db-1 psql -U rezeptkiste -tAc 'select 1 from recipe limit 1' 2>/dev/null)" ]; then
     /usr/local/bin/rezeptkiste-import "$zip" --commit
   else
-    echo "Datenbank enthält bereits Rezepte; Import übersprungen. Manuell: rezeptkiste-import $zip --commit"
+    echo "Datenbank enthält bereits Rezepte; Import übersprungen. Manuell: cookfolio-import $zip --commit"
   fi
 done
 
 printf '\n\033[1;32m==== FERTIG ====\033[0m\n'
 echo "Server-Adresse für die Apps: https://$DOMAIN"
 echo "Benutzer: $(grep '^RK_ADMIN_USER=' "$ENV_FILE" | cut -d= -f2)"
-echo "Befehle: rezeptkiste-update, rezeptkiste-import, rezeptkiste-backup"
+echo "Befehle: cookfolio-update, cookfolio-import, cookfolio-backup"
 
 }
 

@@ -32,10 +32,10 @@ APK und MSI liegen danach unter **Actions** beim jeweiligen Lauf als Artefakte z
 
 ## Server aktualisieren
 
-Neue Funktionen brauchen manchmal eine neue Server-Version (zuletzt: Einkaufsliste). Auf dem VPS:
+Neue Funktionen brauchen manchmal eine neue Server-Version (zuletzt: Einkaufsliste). Auf dem VPS (bis zum ersten Update heißt der Befehl noch `rezeptkiste-update`):
 
 ```
-rezeptkiste-update
+cookfolio-update
 ```
 
 Bis dahin bleibt die Einkaufsliste auf dem jeweiligen Gerät; Rezepte synchronisieren weiter.
