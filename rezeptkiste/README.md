@@ -24,16 +24,29 @@ APK und MSI liegen danach unter **Actions** beim jeweiligen Lauf als Artefakte z
 - [x] Schritt 3: App-Grundgerüst mit Anmeldung, Vollabgleich, Rezeptliste und Detailansicht
 - [x] Schritt 4: Rezepte bearbeiten, Fotos, Filter, Sortierung
 - [x] Schritt 5: Portionsumrechnung, Kochmodus, Teilen als Text
+- [x] Einkaufsliste mit Sync, Abschnittstitel werden ausgelassen
+- [x] Zeitangaben im Rezept als Timer (Android: Uhr-App, Windows: eingebauter Timer)
+- [x] Rezepteingabe mit Freitext und Live-Vorschau, Zwischenüberschriften
 - [ ] Schritt 6: Web- und Scan-Import (Text- und Recipe-Keeper-Import sind fertig)
 - [ ] Schritt 7: Signierte APK, Backup, Monitoring
 
-## Offen
+## Server aktualisieren
 
-- Rezepteingabe neu gestalten: funktioniert im Test auf Android und Windows nicht und soll klüger, einfacher und schöner werden (Rückmeldung vom 01.10.2026, wird später aufgegriffen)
+Neue Funktionen brauchen manchmal eine neue Server-Version (zuletzt: Einkaufsliste). Auf dem VPS:
+
+```
+rezeptkiste-update
+```
+
+Bis dahin bleibt die Einkaufsliste auf dem jeweiligen Gerät; Rezepte synchronisieren weiter.
+
+## Bildschirmfotos
+
+Jeder Build legt Bildschirmfotos (Handy, Tablet, Windows) im Zweig `cookfolio-screens` ab.
 
 ## App installieren
 
-- **Android:** `composeApp-debug.apk` aus dem Artefakt `cookfolio-android-apk` auf das Gerät laden und öffnen. Einmalig die Installation aus dieser Quelle erlauben.
+- **Android:** `composeApp-debug.apk` aus dem Artefakt `cookfolio-android-apk` auf das Gerät laden und öffnen. Einmalig die Installation aus dieser Quelle erlauben. Ab Version 1.0.22 ist die APK immer mit demselben Schlüssel signiert und ersetzt die vorige ohne Deinstallation (einmalig vorher deinstallieren, wenn eine ältere Version installiert ist).
 - **Windows:** `Cookfolio-1.0.<Build>.msi` aus dem Artefakt `cookfolio-windows-msi` ausführen. Die Installation erfolgt für den aktuellen Benutzer und benötigt keine Administratorrechte. Der Installer wird bewusst nicht signiert. SmartScreen warnt deshalb mit "Unbekannter Herausgeber": "Weitere Informationen", dann "Trotzdem ausführen".
 
 Beim ersten Start fragt die App nach Server-Adresse, Benutzername, Passwort und Gerätename.
