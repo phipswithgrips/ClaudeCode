@@ -56,6 +56,8 @@ jobs:
   android:
     name: Android-APK und Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: rezeptkiste/app
@@ -68,6 +70,14 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Tests (Sync-Engine, Formatierung)
         run: ci/gradle.sh :composeApp:desktopTest
+      - name: Bildschirmfotos (Handy, Tablet, Windows) in den Zweig cookfolio-screens
+        if: always()
+        run: |
+          cd composeApp/build/screens 2>/dev/null || exit 0
+          git init -q && git checkout -q -b cookfolio-screens
+          echo "Bildschirmfotos aus dem Test zu ${GITHUB_SHA}" > README.md
+          git add . && git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "Bildschirmfotos ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" cookfolio-screens
       - name: APK bauen
         run: ci/gradle.sh :composeApp:assembleDebug
       - uses: actions/upload-artifact@v4

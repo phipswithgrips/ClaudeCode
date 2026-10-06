@@ -82,6 +82,12 @@ import kotlinx.coroutines.launch
 fun App(platform: PlatformServices) {
     val scope = rememberCoroutineScope()
     val controller = remember { AppController(platform, scope) }
+    AppContent(controller)
+}
+
+/** Oberfläche zu einem fertigen Controller (auch für die Bildschirmfotos im Test). */
+@Composable
+fun AppContent(controller: AppController) {
     val loggedIn by controller.loggedIn.collectAsState()
     val accentArgb by controller.accent.collectAsState()
     val textScale by controller.textScale.collectAsState()
