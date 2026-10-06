@@ -45,6 +45,10 @@ fun createDesktopDriver(url: String): SqlDriver {
     if (version == 0L) {
         RezeptDatabase.Schema.create(driver)
         driver.execute(null, "PRAGMA user_version = ${RezeptDatabase.Schema.version}", 0)
+    } else if (version < RezeptDatabase.Schema.version) {
+        // Vorhandene Datenbank auf den neuen Stand bringen (z. B. Tabelle für die Einkaufsliste)
+        RezeptDatabase.Schema.migrate(driver, version, RezeptDatabase.Schema.version)
+        driver.execute(null, "PRAGMA user_version = ${RezeptDatabase.Schema.version}", 0)
     }
     return driver
 }

@@ -179,6 +179,7 @@ private fun ScreenContent(controller: AppController, screen: Screen, narrow: Boo
         Screen.TextImport -> TextImportScreen(controller, narrow)
         is Screen.Settings -> SettingsScreen(controller, screen.tab, narrow)
         is Screen.Placeholder -> PlaceholderScreen(screen)
+        Screen.Shopping -> ShoppingScreen(controller, narrow)
         Screen.Help -> HelpScreen()
     }
 }
@@ -246,8 +247,9 @@ private fun NavPane(controller: AppController, expanded: Boolean, onToggle: () -
             }
         }
         NavItem(Icons.Outlined.Home, "Start", screen is Screen.Start || screen is Screen.Course || screen is Screen.Recipes || screen is Screen.Detail, expanded) { open(Screen.Start) }
-        NavItem(Icons.AutoMirrored.Outlined.List, "Einkaufsliste", (screen as? Screen.Placeholder)?.title == "Einkaufsliste", expanded) {
-            open(Screen.Placeholder("Einkaufsliste", "Die Einkaufsliste mit Sortierung nach Gängen im Markt kommt in Version 2."))
+        val shoppingCount = controller.shopping.collectAsState().value.count { it.checked == 0L }
+        NavItem(Icons.AutoMirrored.Outlined.List, if (shoppingCount > 0) "Einkaufsliste ($shoppingCount)" else "Einkaufsliste", screen is Screen.Shopping, expanded) {
+            open(Screen.Shopping)
         }
         NavItem(Icons.Outlined.Create, "Kochbücher", (screen as? Screen.Placeholder)?.title == "Kochbücher", expanded) {
             open(Screen.Placeholder("Kochbücher", "Kochbücher als PDF mit Deckblatt und Inhaltsverzeichnis kommen in Version 2."))

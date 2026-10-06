@@ -41,9 +41,17 @@ class SyncEngine(
         var accepted = 0
         var rejected = 0
         var errors = 0
-        for (batch in repo.dirtyRecords().chunked(pageSize)) {
+        val (extra, core) = repo.dirtyRecords().partition { it.type == EntityType.SHOPPING_ITEM }
+        // Die Einkaufsliste getrennt senden: ein älterer Server ohne Einkaufsliste lehnt sie ab,
+        // Rezepte sollen trotzdem synchron bleiben.
+        val batches = core.chunked(pageSize).map { it to false } + extra.chunked(pageSize).map { it to true }
+        for ((batch, optional) in batches) {
             val sent = batch.associateBy { it.type to it.id }
-            val res = api.push(PushRequest(batch))
+            val res = try {
+                api.push(PushRequest(batch))
+            } catch (e: ApiException) {
+                if (optional && e !is UnauthorizedException) continue else throw e
+            }
             for (a in res.accepted) {
                 val rec = sent[a.type to a.id] ?: continue
                 repo.markAccepted(a.type, a.id, a.serverRev, rec.updatedAt)

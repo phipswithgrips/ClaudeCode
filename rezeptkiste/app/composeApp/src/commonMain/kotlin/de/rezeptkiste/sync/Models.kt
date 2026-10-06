@@ -19,6 +19,7 @@ object EntityType {
     const val COLLECTION = "collection"
     const val RECIPE = "recipe"
     const val PHOTO = "photo"
+    const val SHOPPING_ITEM = "shopping_item"
     val LABELS = setOf(COURSE, CATEGORY, COLLECTION)
 }
 
@@ -120,4 +121,13 @@ data class PhotoData(
     val mime: String = "image/jpeg",
     val width: Long? = null,
     val height: Long? = null,
+)
+
+@Serializable
+data class ShoppingItemData(
+    val text: String = "",
+    val checked: Boolean = false,
+    @SerialName("recipe_id") val recipeId: String? = null,
+    @SerialName("recipe_title") val recipeTitle: String? = null,
+    @SerialName("sort_order") val sortOrder: Long = 0,
 )

@@ -11,6 +11,7 @@ import de.rezeptkiste.db.Label
 import de.rezeptkiste.db.Photo
 import de.rezeptkiste.db.Recipe
 import de.rezeptkiste.db.RezeptDatabase
+import de.rezeptkiste.db.Shopping_item
 import de.rezeptkiste.sync.Api
 import de.rezeptkiste.sync.ApiException
 import de.rezeptkiste.sync.AppJson
@@ -86,6 +87,7 @@ sealed interface Screen {
     data class Settings(val tab: Int = 0) : Screen
     data class Placeholder(val title: String, val text: String) : Screen
     data object Help : Screen
+    data object Shopping : Screen
 }
 
 @OptIn(ExperimentalUuidApi::class)
@@ -119,12 +121,13 @@ class AppController(val platform: PlatformServices, private val scope: Coroutine
     /** Teilen: Android öffnet das Teilen-Menü, Windows kopiert in die Zwischenablage. */
     fun share(title: String, text: String) {
         platform.shareText(title, text)
-        if (platform.isDesktop) toast("Rezept als Text in die Zwischenablage kopiert.")
+        if (platform.isDesktop) toast("In die Zwischenablage kopiert.")
     }
 
     val recipes: StateFlow<List<Recipe>> = repo.recipes().stateIn(scope, SharingStarted.Eagerly, emptyList())
     val labels: StateFlow<List<Label>> = repo.labels().stateIn(scope, SharingStarted.Eagerly, emptyList())
     val photos: StateFlow<List<Photo>> = repo.photos().stateIn(scope, SharingStarted.Eagerly, emptyList())
+    val shopping: StateFlow<List<Shopping_item>> = repo.shoppingItems().stateIn(scope, SharingStarted.Eagerly, emptyList())
 
     // --- Einstellungen und Ansicht --------------------------------------------------
 
@@ -276,6 +279,52 @@ class AppController(val platform: PlatformServices, private val scope: Coroutine
             delay(5_000)
             syncNow()
         }
+    }
+
+    // --- Einkaufsliste --------------------------------------------------------------------
+
+    private fun nextShoppingOrder(): Long = (shopping.value.maxOfOrNull { it.sort_order } ?: 0L) + 1L
+
+    /** Zutaten eines Rezepts übernehmen (Zwischenüberschriften sind bereits herausgefiltert). */
+    fun addToShopping(recipe: Recipe?, lines: List<String>) {
+        var order = nextShoppingOrder()
+        repo.transaction {
+            lines.map { it.trim() }.filter { it.isNotEmpty() }.forEach { text ->
+                repo.saveShoppingItem(
+                    Shopping_item(newId(), hlc.now(), 0L, 0L, 1L, text, 0L, recipe?.id, recipe?.title, order++),
+                )
+            }
+        }
+        toast(if (lines.size == 1) "1 Artikel zur Einkaufsliste hinzugefügt." else "${lines.size} Artikel zur Einkaufsliste hinzugefügt.")
+        syncSoon()
+    }
+
+    fun addShoppingText(text: String) {
+        val lines = text.lines().map { it.trim() }.filter { it.isNotEmpty() }
+        if (lines.isEmpty()) return
+        var order = nextShoppingOrder()
+        repo.transaction {
+            lines.forEach { repo.saveShoppingItem(Shopping_item(newId(), hlc.now(), 0L, 0L, 1L, it, 0L, null, null, order++)) }
+        }
+        syncSoon()
+    }
+
+    fun toggleShopping(item: Shopping_item) {
+        repo.saveShoppingItem(item.copy(checked = if (item.checked == 1L) 0L else 1L, updated_at = hlc.now()))
+        syncSoon()
+    }
+
+    fun editShopping(item: Shopping_item, text: String) {
+        if (text.isBlank()) { deleteShopping(listOf(item)); return }
+        if (text.trim() == item.text) return
+        repo.saveShoppingItem(item.copy(text = text.trim(), updated_at = hlc.now()))
+        syncSoon()
+    }
+
+    fun deleteShopping(items: List<Shopping_item>) {
+        if (items.isEmpty()) return
+        repo.transaction { items.forEach { repo.saveShoppingItem(it.copy(deleted = 1L, updated_at = hlc.now())) } }
+        syncSoon()
     }
 
     // --- Timer ------------------------------------------------------------------------

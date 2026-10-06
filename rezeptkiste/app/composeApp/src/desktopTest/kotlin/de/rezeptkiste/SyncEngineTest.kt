@@ -36,6 +36,8 @@ private class FakeServer {
     var rev = 0L
     val pushes = mutableListOf<PushRequest>()
     var unauthorized = false
+    /** Verhält sich wie ein Server ohne Einkaufsliste (vor dem Update). */
+    var rejectShopping = false
 
     fun put(type: String, id: String, updatedAt: String, data: JsonObject, deleted: Boolean = false) {
         rev++
@@ -57,6 +59,9 @@ private class FakeServer {
             }
             "/sync/push" -> {
                 val req = AppJson.decodeFromString(PushRequest.serializer(), request.body.toByteArray().decodeToString())
+                if (rejectShopping && req.records.any { it.type == "shopping_item" }) {
+                    return@MockEngine respond("""{"detail":"invalid type"}""", HttpStatusCode.UnprocessableEntity, json)
+                }
                 pushes += req
                 val accepted = mutableListOf<Accepted>()
                 val rejected = mutableListOf<ServerRecord>()
@@ -173,6 +178,30 @@ class SyncEngineTest {
         server.put("recipe", "r1", ts(20), recipeData("Sorbet"), deleted = true)
         engine.sync()
         assertEquals(1L, repo.recipe("r1")!!.deleted)
+    }
+
+    @Test
+    fun shoppingItemsSyncAndOldServerDoesNotBlockRecipes() = runTest {
+        server.rejectShopping = true
+        repo.saveShoppingItem(
+            de.rezeptkiste.db.Shopping_item("s1", hlc.now(), 0, 0, 1, "250 g Mehl", 0, "r1", "Kuchen", 1),
+        )
+        server.put("recipe", "r1", ts(10), recipeData("Sorbet"))
+        engine.sync()
+        repo.setFavourite("r1", true, hlc.now())
+        engine.sync()
+        // Rezept kam an, Einkaufsliste wartet auf den neuen Server
+        assertEquals(JsonPrimitive(true), server.records["recipe" to "r1"]!!.data["is_favourite"])
+        assertEquals(listOf("shopping_item"), repo.dirtyRecords().map { it.type })
+
+        server.rejectShopping = false
+        engine.sync()
+        assertEquals(JsonPrimitive("250 g Mehl"), server.records["shopping_item" to "s1"]!!.data["text"])
+        assertEquals(0, repo.dirtyRecords().size)
+
+        server.put("shopping_item", "s1", ts(9_999_999, "windows"), buildJsonObject { put("text", "250 g Mehl"); put("checked", true) })
+        engine.sync()
+        assertEquals(1L, repo.shoppingItem("s1")!!.checked)
     }
 
     @Test

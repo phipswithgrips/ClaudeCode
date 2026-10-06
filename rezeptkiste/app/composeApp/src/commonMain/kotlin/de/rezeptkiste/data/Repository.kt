@@ -6,12 +6,14 @@ import de.rezeptkiste.db.Label
 import de.rezeptkiste.db.Photo
 import de.rezeptkiste.db.Recipe
 import de.rezeptkiste.db.RezeptDatabase
+import de.rezeptkiste.db.Shopping_item
 import de.rezeptkiste.sync.AppJson
 import de.rezeptkiste.sync.EntityType
 import de.rezeptkiste.sync.LabelData
 import de.rezeptkiste.sync.PhotoData
 import de.rezeptkiste.sync.RecipeData
 import de.rezeptkiste.sync.ServerRecord
+import de.rezeptkiste.sync.ShoppingItemData
 import de.rezeptkiste.sync.SyncRecord
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -40,6 +42,14 @@ class Repository(private val db: RezeptDatabase) {
 
     fun photos(): Flow<List<Photo>> = db.photoQueries.selectVisible().asFlow().mapToList(Dispatchers.Default)
 
+    fun shoppingItems(): Flow<List<Shopping_item>> = db.shoppingItemQueries.selectVisible().asFlow().mapToList(Dispatchers.Default)
+
+    fun shoppingItem(id: String): Shopping_item? = db.shoppingItemQueries.selectById(id).executeAsOneOrNull()
+
+    fun saveShoppingItem(item: Shopping_item) {
+        db.shoppingItemQueries.upsert(item.copy(dirty = 1))
+    }
+
     fun recipe(id: String): Recipe? = db.recipeQueries.selectById(id).executeAsOneOrNull()
 
     // --- Einstellungen --------------------------------------------------------------
@@ -65,6 +75,7 @@ class Repository(private val db: RezeptDatabase) {
         db.recipeQueries.deleteAll()
         db.labelQueries.deleteAll()
         db.photoQueries.deleteAll()
+        db.shoppingItemQueries.deleteAll()
         db.kvQueries.deleteAll()
     }
 
@@ -99,6 +110,7 @@ class Repository(private val db: RezeptDatabase) {
         db.labelQueries.selectDirty().executeAsList().forEach { add(it.toRecord()) }
         db.recipeQueries.selectDirty().executeAsList().forEach { add(it.toRecord()) }
         db.photoQueries.selectDirty().executeAsList().forEach { add(it.toRecord()) }
+        db.shoppingItemQueries.selectDirty().executeAsList().forEach { add(it.toRecord()) }
     }
 
     /** Übernommen: dirty zurücksetzen, außer der Datensatz wurde inzwischen erneut geändert. */
@@ -106,6 +118,7 @@ class Repository(private val db: RezeptDatabase) {
         when (type) {
             EntityType.RECIPE -> db.recipeQueries.markClean(serverRev, id, sentUpdatedAt)
             EntityType.PHOTO -> db.photoQueries.markClean(serverRev, id, sentUpdatedAt)
+            EntityType.SHOPPING_ITEM -> db.shoppingItemQueries.markClean(serverRev, id, sentUpdatedAt)
             in EntityType.LABELS -> db.labelQueries.markClean(serverRev, id, sentUpdatedAt)
         }
     }
@@ -125,6 +138,7 @@ class Repository(private val db: RezeptDatabase) {
                 when (r.type) {
                     EntityType.RECIPE -> db.recipeQueries.upsert(r.toRecipe())
                     EntityType.PHOTO -> db.photoQueries.upsert(r.toPhoto())
+                    EntityType.SHOPPING_ITEM -> db.shoppingItemQueries.upsert(r.toShoppingItem())
                     in EntityType.LABELS -> db.labelQueries.upsert(r.toLabel())
                     else -> continue
                 }
@@ -138,6 +152,7 @@ class Repository(private val db: RezeptDatabase) {
         val (dirty, updatedAt) = when (r.type) {
             EntityType.RECIPE -> db.recipeQueries.selectById(r.id).executeAsOneOrNull()?.let { it.dirty to it.updated_at }
             EntityType.PHOTO -> db.photoQueries.selectById(r.id).executeAsOneOrNull()?.let { it.dirty to it.updated_at }
+            EntityType.SHOPPING_ITEM -> db.shoppingItemQueries.selectById(r.id).executeAsOneOrNull()?.let { it.dirty to it.updated_at }
             in EntityType.LABELS -> db.labelQueries.selectById(r.id).executeAsOneOrNull()?.let { it.dirty to it.updated_at }
             else -> null
         } ?: return false
@@ -204,4 +219,17 @@ internal fun Label.toRecord(): SyncRecord =
 internal fun Photo.toRecord(): SyncRecord {
     val d = PhotoData(recipe_id, sort_order, sha256, mime, width, height)
     return SyncRecord(EntityType.PHOTO, id, updated_at, deleted == 1L, AppJson.encodeToJsonElement(PhotoData.serializer(), d).jsonObject)
+}
+
+internal fun ServerRecord.toShoppingItem(): Shopping_item {
+    val d = AppJson.decodeFromJsonElement(ShoppingItemData.serializer(), data)
+    return Shopping_item(
+        id = id, updated_at = updatedAt, deleted = deleted.toLong(), server_rev = serverRev, dirty = 0,
+        text = d.text, checked = d.checked.toLong(), recipe_id = d.recipeId, recipe_title = d.recipeTitle, sort_order = d.sortOrder,
+    )
+}
+
+internal fun Shopping_item.toRecord(): SyncRecord {
+    val d = ShoppingItemData(text, checked == 1L, recipe_id, recipe_title, sort_order)
+    return SyncRecord(EntityType.SHOPPING_ITEM, id, updated_at, deleted == 1L, AppJson.encodeToJsonElement(ShoppingItemData.serializer(), d).jsonObject)
 }

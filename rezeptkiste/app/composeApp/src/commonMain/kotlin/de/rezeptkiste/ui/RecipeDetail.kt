@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -118,6 +119,7 @@ fun RecipeDetailScreen(controller: AppController, screen: Screen.Detail, narrow:
     var portionDialog by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
+    var shoppingDialog by remember { mutableStateOf(false) }
 
     val idx = screen.context.indexOf(recipe.id)
     val prev = if (idx > 0) screen.context[idx - 1] else null
@@ -132,6 +134,9 @@ fun RecipeDetailScreen(controller: AppController, screen: Screen.Detail, narrow:
         ) {
             CommandButton(Icons.Filled.Share, if (narrow) null else "Teilen", { controller.share(recipe.title, recipeAsText(recipe, labelsById)) })
             CommandButton(Icons.Filled.Edit, if (narrow) null else "Bearbeiten", { controller.go(Screen.Edit(recipe.id)) })
+            CommandButton(Icons.Outlined.ShoppingCart, if (narrow) null else "Zur Einkaufsliste hinzufügen", {
+                if (RecipeText.shoppingItems(recipe.ingredients_text).isEmpty()) controller.toast("Dieses Rezept hat keine Zutaten.") else shoppingDialog = true
+            })
             val fav = recipe.is_favourite == 1L
             CommandButton(
                 if (fav) Icons.Filled.Star else Icons.Outlined.Star,
@@ -191,6 +196,11 @@ fun RecipeDetailScreen(controller: AppController, screen: Screen.Detail, narrow:
                 portionDialog = false
             },
         )
+    }
+    if (shoppingDialog) {
+        // Mengen wie gerade angezeigt (auch nach "Einstellen +/-")
+        val items = remember(recipe.ingredients_text, factor) { RecipeText.shoppingItems(Quantity.scaleText(recipe.ingredients_text, factor)) }
+        AddToShoppingDialog(controller, recipe, items) { shoppingDialog = false }
     }
     if (confirmDelete) {
         ConfirmDialog("Rezept löschen", "\"${recipe.title}\" wirklich löschen?", "Löschen", { confirmDelete = false }) {
