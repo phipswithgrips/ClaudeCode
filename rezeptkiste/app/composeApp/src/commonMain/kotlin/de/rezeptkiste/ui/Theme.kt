@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import kotlin.math.pow
 
 /** Farben im Aufbau von Recipe Keeper: dunkle Flächen, eine wählbare Akzentfarbe. */
 object RkColors {
@@ -36,10 +37,33 @@ object RkColors {
 }
 
 val LocalAccent = staticCompositionLocalOf { Color(0xFFD9622B) }
+val LocalAccentFill = staticCompositionLocalOf { Color(0xFFD9622B) }
 
-/** Aktuelle Akzentfarbe. */
+/** Akzentfarbe für Schrift und Symbole: immer gut lesbar auf dem dunklen Hintergrund. */
 val accent: Color
     @Composable @ReadOnlyComposable get() = LocalAccent.current
+
+/** Akzentfarbe für Flächen (Kacheln, Schaltflächen) mit weißer Schrift, genau wie gewählt. */
+val accentFill: Color
+    @Composable @ReadOnlyComposable get() = LocalAccentFill.current
+
+private fun channel(c: Float): Double = if (c <= 0.03928f) c / 12.92 else ((c + 0.055) / 1.055).pow(2.4)
+private fun luminance(c: Color): Double = 0.2126 * channel(c.red) + 0.7152 * channel(c.green) + 0.0722 * channel(c.blue)
+private fun contrast(a: Color, b: Color): Double {
+    val (l1, l2) = luminance(a) to luminance(b)
+    return (maxOf(l1, l2) + 0.05) / (minOf(l1, l2) + 0.05)
+}
+
+/** Hellt eine zu dunkle Akzentfarbe so weit auf, dass Text darin lesbar bleibt (Kontrast mindestens 3:1 wie für große Schrift und Bedienelemente). */
+fun readableOn(color: Color, background: Color = RkColors.Background, minContrast: Double = 3.0): Color {
+    var c = color
+    var step = 0
+    while (contrast(c, background) < minContrast && step < 20) {
+        c = Color(c.red + (1f - c.red) * 0.12f, c.green + (1f - c.green) * 0.12f, c.blue + (1f - c.blue) * 0.12f, 1f)
+        step++
+    }
+    return c
+}
 
 private fun typography(scale: Float) = Typography(
     headlineMedium = TextStyle(fontSize = (26 * scale).sp, fontWeight = FontWeight.Light),
@@ -57,7 +81,8 @@ private fun typography(scale: Float) = Typography(
 
 @Composable
 fun RezeptTheme(accentArgb: Long, textScale: Float = 1f, content: @Composable () -> Unit) {
-    val a = Color(accentArgb.toInt())
+    val fill = Color(accentArgb.toInt())
+    val a = readableOn(fill)
     val scheme = darkColorScheme(
         primary = a, onPrimary = Color.White, primaryContainer = a, onPrimaryContainer = Color.White,
         secondary = a, onSecondary = Color.White, tertiary = a,
@@ -69,7 +94,7 @@ fun RezeptTheme(accentArgb: Long, textScale: Float = 1f, content: @Composable ()
         outline = RkColors.Line, outlineVariant = RkColors.Line,
         error = RkColors.Error, onError = Color.Black,
     )
-    CompositionLocalProvider(LocalAccent provides a) {
+    CompositionLocalProvider(LocalAccent provides a, LocalAccentFill provides fill) {
         MaterialTheme(colorScheme = scheme, typography = typography(textScale), content = content)
     }
 }

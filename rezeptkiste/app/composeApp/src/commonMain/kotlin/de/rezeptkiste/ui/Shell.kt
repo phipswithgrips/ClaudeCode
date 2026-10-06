@@ -31,7 +31,12 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.automirrored.outlined.List
 import androidx.compose.material.icons.outlined.Create
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -43,6 +48,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -60,6 +66,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import de.rezeptkiste.AppController
@@ -76,12 +85,17 @@ fun App(platform: PlatformServices) {
     val loggedIn by controller.loggedIn.collectAsState()
     val accentArgb by controller.accent.collectAsState()
     val textScale by controller.textScale.collectAsState()
+    val zoom by controller.zoom.collectAsState()
+    val base = LocalDensity.current
 
-    RezeptTheme(accentArgb, textScale) {
-        Surface(modifier = Modifier.fillMaxSize(), color = RkColors.Background) {
-            Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
-                if (loggedIn) Shell(controller) else LoginScreen(controller)
-                MessageBar(controller)
+    CompositionLocalProvider(LocalDensity provides Density(base.density * zoom, base.fontScale)) {
+        RezeptTheme(accentArgb, textScale) {
+            Surface(modifier = Modifier.fillMaxSize(), color = RkColors.Background) {
+                Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
+                    if (loggedIn) Shell(controller) else LoginScreen(controller)
+                    TimerPanel(controller)
+                    MessageBar(controller)
+                }
             }
         }
     }
@@ -196,6 +210,8 @@ private fun NavPane(controller: AppController, expanded: Boolean, onToggle: () -
     val sync by controller.sync.collectAsState()
     val width = if (expanded) 236.dp else 48.dp
     var newMenu by remember { mutableStateOf(false) }
+    var timerDialog by remember { mutableStateOf(false) }
+    if (timerDialog) NewTimerDialog(controller) { timerDialog = false }
 
     fun open(s: Screen) { controller.root(s); onPicked() }
 
@@ -229,22 +245,23 @@ private fun NavPane(controller: AppController, expanded: Boolean, onToggle: () -
                 DropdownMenuItem(text = { Text("Rezept aus Text hinzufügen") }, onClick = { newMenu = false; controller.go(Screen.TextImport); onPicked() })
             }
         }
-        NavItem(Icons.Filled.Home, "Start", screen is Screen.Start || screen is Screen.Course || screen is Screen.Recipes || screen is Screen.Detail, expanded) { open(Screen.Start) }
-        NavItem(Icons.AutoMirrored.Filled.List, "Einkaufsliste", (screen as? Screen.Placeholder)?.title == "Einkaufsliste", expanded) {
+        NavItem(Icons.Outlined.Home, "Start", screen is Screen.Start || screen is Screen.Course || screen is Screen.Recipes || screen is Screen.Detail, expanded) { open(Screen.Start) }
+        NavItem(Icons.AutoMirrored.Outlined.List, "Einkaufsliste", (screen as? Screen.Placeholder)?.title == "Einkaufsliste", expanded) {
             open(Screen.Placeholder("Einkaufsliste", "Die Einkaufsliste mit Sortierung nach Gängen im Markt kommt in Version 2."))
         }
         NavItem(Icons.Outlined.Create, "Kochbücher", (screen as? Screen.Placeholder)?.title == "Kochbücher", expanded) {
             open(Screen.Placeholder("Kochbücher", "Kochbücher als PDF mit Deckblatt und Inhaltsverzeichnis kommen in Version 2."))
         }
-        NavItem(Icons.Filled.Notifications, "Neuer Timer", (screen as? Screen.Placeholder)?.title == "Timer", expanded) {
-            open(Screen.Placeholder("Timer", "Timer kommen in Version 2."))
+        NavItem(Icons.Outlined.Notifications, "Neuer Timer", false, expanded) {
+            if (!controller.platform.openSystemTimers()) timerDialog = true
+            onPicked()
         }
         Spacer(Modifier.weight(1f))
         NavItem(if (sync is SyncStatus.Failed) Icons.Filled.Warning else Icons.Filled.Refresh, syncText(sync), false, expanded, tint = if (sync is SyncStatus.Failed) RkColors.Error else RkColors.Text) {
             controller.syncNow()
         }
-        NavItem(Icons.Filled.Info, "Hilfe", screen is Screen.Help, expanded) { open(Screen.Help) }
-        NavItem(Icons.Filled.Settings, "Einstellungen", screen is Screen.Settings, expanded) { open(Screen.Settings()) }
+        NavItem(Icons.Outlined.Info, "Hilfe", screen is Screen.Help, expanded) { open(Screen.Help) }
+        NavItem(Icons.Outlined.Settings, "Einstellungen", screen is Screen.Settings, expanded) { open(Screen.Settings()) }
     }
 }
 
@@ -282,8 +299,14 @@ private fun SearchBox(controller: AppController, onPicked: () -> Unit) {
         if (query.length < 2) emptyList() else recipes.filter { it.title.contains(query.trim(), ignoreCase = true) }.take(8)
     }
     val cover = remember(photos) { photos.groupBy { it.recipe_id }.mapValues { (_, p) -> p.minBy { it.sort_order }.sha256 } }
+    val focus = LocalFocusManager.current
     fun submit() {
-        if (query.isNotBlank()) { controller.go(Screen.Search(query.trim())); onPicked() }
+        if (query.isNotBlank()) {
+            controller.go(Screen.Search(query.trim()))
+            query = ""
+            focus.clearFocus()
+            onPicked()
+        }
     }
     Box(Modifier.padding(horizontal = 8.dp, vertical = 2.dp)) {
         Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(3.dp)).background(RkColors.Field), verticalAlignment = Alignment.CenterVertically) {
@@ -313,6 +336,7 @@ private fun SearchBox(controller: AppController, onPicked: () -> Unit) {
                         controller.markViewed(r.id)
                         controller.go(Screen.Detail(r.id, suggestions.map { it.id }))
                         query = ""
+                        focus.clearFocus()
                         onPicked()
                     },
                 )

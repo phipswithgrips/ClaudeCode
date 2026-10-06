@@ -117,6 +117,28 @@ class DesktopPlatform(private val dataDir: File = appDataDir()) : PlatformServic
     override fun decodeImage(bytes: ByteArray): ImageBitmap? =
         runCatching { org.jetbrains.skia.Image.makeFromEncoded(bytes).toComposeImageBitmap() }.getOrNull()
 
+    private var tray: java.awt.TrayIcon? = null
+
+    /** Abgelaufener Timer: Windows-Benachrichtigung, Ton und Fenster nach vorn. */
+    override fun timerFinished(label: String) {
+        java.awt.EventQueue.invokeLater {
+            runCatching {
+                if (java.awt.SystemTray.isSupported()) {
+                    val icon = tray ?: java.awt.TrayIcon(
+                        Thread.currentThread().contextClassLoader.getResource("icon.png")?.let { Toolkit.getDefaultToolkit().getImage(it) }
+                            ?: java.awt.image.BufferedImage(16, 16, java.awt.image.BufferedImage.TYPE_INT_ARGB),
+                        "Cookfolio",
+                    ).also { it.isImageAutoSize = true; java.awt.SystemTray.getSystemTray().add(it); tray = it }
+                    icon.displayMessage("Timer abgelaufen", label, java.awt.TrayIcon.MessageType.INFO)
+                }
+            }
+            window?.let { w -> if (w.state == Frame.ICONIFIED) w.state = Frame.NORMAL; w.toFront() }
+        }
+        Thread {
+            repeat(3) { Toolkit.getDefaultToolkit().beep(); Thread.sleep(600) }
+        }.apply { isDaemon = true }.start()
+    }
+
     @Composable
     override fun BackHandler(enabled: Boolean, onBack: () -> Unit) = Unit
 

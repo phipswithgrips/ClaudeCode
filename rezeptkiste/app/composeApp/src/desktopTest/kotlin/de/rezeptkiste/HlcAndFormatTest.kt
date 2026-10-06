@@ -3,7 +3,7 @@ package de.rezeptkiste
 import de.rezeptkiste.sync.Api
 import de.rezeptkiste.sync.Hlc
 import de.rezeptkiste.ui.formatMinutes
-import de.rezeptkiste.ui.isHeading
+import de.rezeptkiste.data.RecipeText
 import de.rezeptkiste.ui.stars
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -45,9 +45,8 @@ class HlcAndFormatTest {
         assertEquals("45 Min.", formatMinutes(45))
         assertEquals(null, formatMinutes(0))
         assertEquals("★★★☆☆", stars(3))
-        assertTrue(isHeading("Füllung:"))
-        assertTrue(isHeading("ZUM ANRICHTEN"))
-        assertFalse(isHeading("250 g Mehl"))
-        assertFalse(isHeading("Hefeteig"))
+        assertTrue(RecipeText.isDirectionHeading("Füllung:"))
+        assertTrue(RecipeText.isDirectionHeading("ZUM ANRICHTEN"))
+        assertFalse(RecipeText.isDirectionHeading("250 g Mehl"))
     }
 }

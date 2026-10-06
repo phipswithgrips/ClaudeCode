@@ -126,3 +126,21 @@ def test_parallel_pushes_get_unique_revisions(app_client):
     revs = [r["server_rev"] for r in records]
     assert len(revs) == len(set(revs)) == len(DEFAULT_COURSES) + 20
     assert cursor == max(revs)
+
+
+def test_shopping_items_sync_between_devices(app_client, auth):
+    sid = str(uuid.uuid4())
+    item = {
+        "type": "shopping_item", "id": sid, "updated_at": ts(5000), "deleted": False,
+        "data": {"text": "250 g Mehl", "checked": False, "recipe_id": "r1", "recipe_title": "Kuchen", "sort_order": 3},
+    }
+    assert len(push(app_client, auth, item)["accepted"]) == 1
+    windows = login(app_client, "Windows")
+    records, _ = pull_all(app_client, windows)
+    got = [r for r in records if r["type"] == "shopping_item"]
+    assert got[0]["data"] == {"text": "250 g Mehl", "checked": False, "recipe_id": "r1", "recipe_title": "Kuchen", "sort_order": 3}
+    # Abhaken auf dem zweiten Gerät
+    checked = item | {"updated_at": ts(6000, "win"), "data": item["data"] | {"checked": True}}
+    assert len(push(app_client, windows, checked)["accepted"]) == 1
+    records, _ = pull_all(app_client, auth)
+    assert [r["data"]["checked"] for r in records if r["id"] == sid] == [True]

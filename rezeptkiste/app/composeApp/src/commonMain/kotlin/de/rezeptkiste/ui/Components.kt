@@ -1,5 +1,6 @@
 package de.rezeptkiste.ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -48,7 +49,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -134,7 +141,7 @@ fun RemoteImage(sha256: String?, size: String, controller: AppController, modifi
 /** Startseiten-Kachel: Foto oben, Leiste in Akzentfarbe mit Name und Anzahl. */
 @Composable
 fun Tile(title: String, count: Int, coverSha: String?, controller: AppController, size: Dp = 168.dp, onClick: () -> Unit) {
-    val a = accent
+    val a = accentFill
     Column(
         Modifier.size(size).clip(RoundedCornerShape(2.dp)).background(a).clickable(onClick = onClick),
     ) {
@@ -159,7 +166,7 @@ fun TileGrid(content: @Composable () -> Unit) {
 /** Rezeptkarte; size 0 = klein, 1 = mittel, 2 = groß. */
 @Composable
 fun RecipeCard(recipe: Recipe, coverSha: String?, controller: AppController, size: Int = 1, onClick: () -> Unit) {
-    val a = accent
+    val a = accentFill
     when (size) {
         2 -> Column(Modifier.size(200.dp, 200.dp).clip(RoundedCornerShape(2.dp)).background(a).clickable(onClick = onClick)) {
             RemoteImage(coverSha, "medium", controller, Modifier.fillMaxWidth().weight(1f), placeholder = a)
@@ -283,10 +290,10 @@ fun MultiSelectDialog(
         containerColor = RkColors.SurfaceHigh,
         title = { Text(title, style = MaterialTheme.typography.titleMedium) },
         text = {
-            Column(Modifier.widthIn(min = 320.dp).heightIn(max = 440.dp).verticalScroll(rememberScrollState())) {
-                FlowRow(maxItemsInEachRow = 2) {
+            Column(Modifier.widthIn(min = 260.dp, max = 420.dp).heightIn(max = 440.dp).verticalScroll(rememberScrollState())) {
+                FlowRow(Modifier.fillMaxWidth(), maxItemsInEachRow = 2) {
                     options.forEach { (id, name) ->
-                        Row(Modifier.width(170.dp).clickable { if (id in chosen) chosen.remove(id) else chosen.add(id) }, verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.fillMaxWidth(0.5f).clickable { if (id in chosen) chosen.remove(id) else chosen.add(id) }, verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(
                                 checked = id in chosen, onCheckedChange = { if (it) chosen.add(id) else chosen.remove(id) },
                                 colors = CheckboxDefaults.colors(checkedColor = a, checkmarkColor = Color.White),
@@ -333,7 +340,7 @@ fun EmptyState(icon: ImageVector, text: String, button: String? = null, onButton
 @Composable
 fun AccentButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     Surface(
-        color = if (enabled) accent else RkColors.SurfaceHigh, shape = RoundedCornerShape(3.dp),
+        color = if (enabled) accentFill else RkColors.SurfaceHigh, shape = RoundedCornerShape(3.dp),
         modifier = modifier.clip(RoundedCornerShape(3.dp)).clickable(enabled = enabled, onClick = onClick),
     ) {
         Text(text, color = Color.White, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp))
@@ -348,3 +355,35 @@ fun AccentHeading(text: String, modifier: Modifier = Modifier) {
 
 @Composable
 fun VSpace(h: Dp) = Spacer(Modifier.height(h))
+
+/** Platzhalter für Rezepte ohne Foto: Schüssel mit Schneebesen auf der Akzentfarbe. */
+@Composable
+fun RecipePlaceholder(modifier: Modifier) {
+    val fill = accentFill
+    Canvas(modifier.background(lerp(fill, Color.White, 0.3f))) {
+        val w = size.width
+        val h = size.height
+        val ink = fill
+        // Schneebesen: Griff und drei Drahtschlaufen
+        val handleStart = Offset(w * 0.70f, h * 0.22f)
+        val handleEnd = Offset(w * 0.58f, h * 0.36f)
+        drawLine(ink, handleStart, handleEnd, strokeWidth = w * 0.035f, cap = StrokeCap.Round)
+        for (k in -1..1) {
+            val path = Path().apply {
+                moveTo(handleEnd.x, handleEnd.y)
+                quadraticTo(w * (0.47f + k * 0.05f), h * (0.38f + k * 0.03f), w * 0.42f, h * 0.56f)
+            }
+            drawPath(path, ink, style = Stroke(width = w * 0.012f, cap = StrokeCap.Round))
+        }
+        // Schüssel
+        val bowl = Path().apply {
+            moveTo(w * 0.24f, h * 0.52f)
+            lineTo(w * 0.76f, h * 0.52f)
+            cubicTo(w * 0.76f, h * 0.70f, w * 0.64f, h * 0.78f, w * 0.50f, h * 0.78f)
+            cubicTo(w * 0.36f, h * 0.78f, w * 0.24f, h * 0.70f, w * 0.24f, h * 0.52f)
+            close()
+        }
+        drawPath(bowl, ink)
+        drawRect(ink, topLeft = Offset(w * 0.42f, h * 0.79f), size = Size(w * 0.16f, h * 0.025f))
+    }
+}

@@ -46,6 +46,20 @@ sealed interface SyncStatus {
     data class Failed(val message: String) : SyncStatus
 }
 
+/** Eingebauter Timer (Windows; auf Android nur, wenn keine Uhr-App da ist). */
+data class RunningTimer(
+    val id: Long,
+    val label: String,
+    val totalSec: Long,
+    /** Ende in Millisekunden; bei pausierten Timern unbenutzt. */
+    val endsAt: Long,
+    /** Restzeit in Sekunden, wenn pausiert. */
+    val pausedLeft: Long? = null,
+    val done: Boolean = false,
+) {
+    fun leftSec(now: Long): Long = pausedLeft ?: ((endsAt - now + 999) / 1000).coerceAtLeast(0)
+}
+
 data class LoginState(val busy: Boolean = false, val error: String? = null)
 
 /** Markiert "ohne Rezeptart/Kategorie/Sammlung" in Filtern. */
@@ -121,6 +135,10 @@ class AppController(val platform: PlatformServices, private val scope: Coroutine
     private val _textScale = MutableStateFlow(repo.setting(KEY_TEXT_SCALE)?.toFloatOrNull() ?: 1f)
     val textScale: StateFlow<Float> = _textScale.asStateFlow()
     fun setTextScale(v: Float) { _textScale.value = v; repo.setSetting(KEY_TEXT_SCALE, v.toString()) }
+
+    private val _zoom = MutableStateFlow(repo.setting(KEY_ZOOM)?.toFloatOrNull() ?: platform.defaultZoom)
+    val zoom: StateFlow<Float> = _zoom.asStateFlow()
+    fun setZoom(v: Float) { _zoom.value = v; repo.setSetting(KEY_ZOOM, v.toString()) }
 
     private val _keepScreenOn = MutableStateFlow(repo.setting(KEY_SCREEN_ON) != "0")
     val keepScreenOn: StateFlow<Boolean> = _keepScreenOn.asStateFlow()
@@ -258,6 +276,73 @@ class AppController(val platform: PlatformServices, private val scope: Coroutine
             delay(5_000)
             syncNow()
         }
+    }
+
+    // --- Timer ------------------------------------------------------------------------
+
+    private val _timers = MutableStateFlow<List<RunningTimer>>(emptyList())
+    val timers: StateFlow<List<RunningTimer>> = _timers.asStateFlow()
+    private var timerSeq = 0L
+    private var ticker: Job? = null
+
+    /** Zeitangabe aus einem Rezept antippen: Android-Uhr, sonst eingebauter Timer. */
+    fun startTimer(seconds: Long, label: String) {
+        if (seconds <= 0) return
+        if (platform.startSystemTimer(seconds, label)) return
+        startInAppTimer(seconds, label)
+    }
+
+    fun startInAppTimer(seconds: Long, label: String) {
+        val t = RunningTimer(++timerSeq, label, seconds, platform.nowMillis() + seconds * 1000)
+        _timers.value = _timers.value + t
+        toast("Timer gestartet: ${de.rezeptkiste.data.RecipeText.formatSeconds(seconds)}")
+        ensureTicker()
+    }
+
+    private fun ensureTicker() {
+        if (ticker?.isActive != true) {
+            ticker = scope.launch {
+                while (_timers.value.any { !it.done }) {
+                    delay(250)
+                    val now = platform.nowMillis()
+                    val finished = _timers.value.filter { !it.done && it.pausedLeft == null && it.endsAt <= now }
+                    if (finished.isNotEmpty()) {
+                        _timers.value = _timers.value.map { if (it in finished) it.copy(done = true) else it }
+                        finished.forEach { platform.timerFinished(it.label) }
+                    }
+                }
+            }
+        }
+    }
+
+    fun pauseTimer(id: Long) {
+        val now = platform.nowMillis()
+        _timers.value = _timers.value.map { if (it.id == id && it.pausedLeft == null && !it.done) it.copy(pausedLeft = it.leftSec(now)) else it }
+    }
+
+    fun resumeTimer(id: Long) {
+        val now = platform.nowMillis()
+        _timers.value = _timers.value.map { t ->
+            if (t.id == id && t.pausedLeft != null) t.copy(endsAt = now + t.pausedLeft * 1000, pausedLeft = null) else t
+        }
+        ensureTicker()
+    }
+
+    fun addMinute(id: Long) {
+        val now = platform.nowMillis()
+        _timers.value = _timers.value.map { t ->
+            when {
+                t.id != id -> t
+                t.pausedLeft != null -> t.copy(pausedLeft = t.pausedLeft + 60)
+                t.done -> t.copy(done = false, endsAt = now + 60_000)
+                else -> t.copy(endsAt = t.endsAt + 60_000)
+            }
+        }
+        ensureTicker()
+    }
+
+    fun removeTimer(id: Long) {
+        _timers.value = _timers.value.filter { it.id != id }
     }
 
     // --- Rezepte ändern ------------------------------------------------------------------
@@ -462,6 +547,7 @@ class AppController(val platform: PlatformServices, private val scope: Coroutine
         const val KEY_TEXT_SCALE = "text_scale"
         const val KEY_SCREEN_ON = "screen_on"
         const val KEY_CARD_SIZE = "card_size"
+        const val KEY_ZOOM = "zoom"
         const val KEY_RECENT = "recent"
         const val DEFAULT_ACCENT = 0xFFD9622BL
     }

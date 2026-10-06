@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from . import hlc
 
-EntityType = Literal["course", "category", "collection", "recipe", "photo"]
+EntityType = Literal["course", "category", "collection", "recipe", "photo", "shopping_item"]
 
 
 # --- Anmeldung ---------------------------------------------------------------
@@ -72,12 +72,21 @@ class PhotoData(_Data):
     height: int | None = None
 
 
+class ShoppingItemData(_Data):
+    text: str = Field(default="", max_length=500)
+    checked: bool = False
+    recipe_id: str | None = Field(default=None, max_length=64)
+    recipe_title: str | None = None
+    sort_order: int = 0
+
+
 DATA_SCHEMAS: dict[str, type[_Data]] = {
     "course": NamedData,
     "category": NamedData,
     "collection": NamedData,
     "recipe": RecipeData,
     "photo": PhotoData,
+    "shopping_item": ShoppingItemData,
 }
 
 

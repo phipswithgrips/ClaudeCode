@@ -47,6 +47,7 @@ fun SplitRecipe.toDraft(): RecipeDraft = RecipeDraft(
     servingsText = servingsText ?: servingsCount?.toString().orEmpty(),
     prepMin = prepMin,
     cookMin = cookMin,
+    source = source.orEmpty(),
     ingredients = ingredients,
     directions = directions,
     notes = notes,

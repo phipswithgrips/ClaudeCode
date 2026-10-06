@@ -95,6 +95,18 @@ class Photo(SyncMixin, Base):
     height: Mapped[int | None] = mapped_column(Integer)
 
 
+class ShoppingItem(SyncMixin, Base):
+    """Eintrag der Einkaufsliste, auf allen Geräten gleich."""
+
+    __tablename__ = "shopping_item"
+
+    text: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    checked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    recipe_id: Mapped[str | None] = mapped_column(String(64))
+    recipe_title: Mapped[str | None] = mapped_column(Text)
+    sort_order: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+
+
 class RecipeHistory(Base):
     """Überschriebene Fassungen eines Rezepts (Sicherheitsnetz bei Konflikten)."""
 
@@ -150,6 +162,7 @@ SYNC_MODELS: dict[str, type[SyncMixin]] = {
     "collection": Collection,
     "recipe": Recipe,
     "photo": Photo,
+    "shopping_item": ShoppingItem,
 }
 
 SYNC_META_FIELDS = {"id", "updated_at", "deleted", "server_rev", "deleted_at"}

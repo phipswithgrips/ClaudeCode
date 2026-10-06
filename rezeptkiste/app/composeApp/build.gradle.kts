@@ -10,6 +10,21 @@ plugins {
     alias(libs.plugins.sqldelight)
 }
 
+val appVersion = "1.0.${System.getenv("GITHUB_RUN_NUMBER") ?: "0"}"
+
+/** Versionsnummer für die Info-Seite der App. */
+val generateVersion by tasks.registering {
+    val out = layout.buildDirectory.dir("generated/version/kotlin")
+    val version = appVersion
+    inputs.property("version", version)
+    outputs.dir(out)
+    doLast {
+        val f = out.get().file("de/rezeptkiste/AppVersion.kt").asFile
+        f.parentFile.mkdirs()
+        f.writeText("package de.rezeptkiste\n\nconst val APP_VERSION = \"$version\"\n")
+    }
+}
+
 kotlin {
     androidTarget {
         compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
@@ -22,6 +37,9 @@ kotlin {
         val desktopMain by getting
         val desktopTest by getting
 
+        commonMain {
+            kotlin.srcDir(generateVersion)
+        }
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
@@ -66,8 +84,8 @@ android {
         applicationId = "de.rezeptkiste"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
+        versionName = appVersion
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -78,6 +96,15 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
             excludes += "/META-INF/INDEX.LIST"
             excludes += "/META-INF/versions/9/previous-compilation-data.bin"
+        }
+    }
+    signingConfigs {
+        // Fester Schlüssel, damit jede neue APK die vorige ohne Deinstallation ersetzt
+        getByName("debug") {
+            storeFile = rootProject.file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
         }
     }
     buildTypes {
@@ -94,7 +121,7 @@ compose.desktop {
             targetFormats(TargetFormat.Msi)
             packageName = "Cookfolio"
             // Jede CI-Version ist höher als die vorige, damit das MSI die alte Installation ersetzt
-            packageVersion = "1.0.${System.getenv("GITHUB_RUN_NUMBER") ?: "0"}"
+            packageVersion = appVersion
             description = "Rezeptverwaltung mit Sync"
             vendor = "Cookfolio"
             // Nur die benötigten Teile der Java-Laufzeit; der Selbsttest im CI prüft, dass nichts fehlt

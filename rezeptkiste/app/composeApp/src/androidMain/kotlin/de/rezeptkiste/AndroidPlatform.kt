@@ -1,11 +1,13 @@
 package de.rezeptkiste
 
+import android.content.ActivityNotFoundException
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
+import android.provider.AlarmClock
 import android.provider.OpenableColumns
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
@@ -110,6 +112,28 @@ class AndroidPlatform(private val context: Context) : PlatformServices {
             putExtra(Intent.EXTRA_TEXT, text)
         }
         context.startActivity(Intent.createChooser(send, "Rezept teilen").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
+
+    /** Timer der Uhr-App mit der Zeit aus dem Rezept starten. */
+    override fun startSystemTimer(seconds: Long, label: String): Boolean = try {
+        val i = Intent(AlarmClock.ACTION_SET_TIMER)
+            .putExtra(AlarmClock.EXTRA_LENGTH, seconds.coerceIn(1, 86_400).toInt())
+            .putExtra(AlarmClock.EXTRA_MESSAGE, label.take(60))
+            .putExtra(AlarmClock.EXTRA_SKIP_UI, false)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(i)
+        true
+    } catch (e: ActivityNotFoundException) {
+        false
+    } catch (e: SecurityException) {
+        false
+    }
+
+    override fun openSystemTimers(): Boolean = try {
+        context.startActivity(Intent(AlarmClock.ACTION_SHOW_TIMERS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        true
+    } catch (e: ActivityNotFoundException) {
+        false
     }
 
     override fun clipboardText(): String? {

@@ -27,6 +27,14 @@ fun main(args: Array<String>) {
     Thread.setDefaultUncaughtExceptionHandler { _, e ->
         runCatching { File(appDataDir(), "error.log").appendText("${java.time.Instant.now()} ${e.stackTraceToString()}\n") }
     }
+    // Nur eine Cookfolio-Instanz: zwei Fenster auf derselben Datenbank würden sich gegenseitig überschreiben
+    val lock = runCatching {
+        java.io.RandomAccessFile(File(appDataDir(), "app.lock"), "rw").channel.tryLock()
+    }.getOrNull()
+    if (lock == null) {
+        javax.swing.JOptionPane.showMessageDialog(null, "Cookfolio ist bereits geöffnet.", "Cookfolio", javax.swing.JOptionPane.INFORMATION_MESSAGE)
+        exitProcess(0)
+    }
     val platform = DesktopPlatform()
     application {
         val icon = remember { appIcon()?.let { BitmapPainter(it.toComposeImageBitmap()) } }

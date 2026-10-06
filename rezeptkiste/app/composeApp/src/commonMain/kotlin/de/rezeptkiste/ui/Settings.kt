@@ -41,10 +41,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import de.rezeptkiste.APP_VERSION
 import de.rezeptkiste.AppController
 import de.rezeptkiste.SyncStatus
 import de.rezeptkiste.db.Label
 import de.rezeptkiste.sync.EntityType
+import kotlin.math.roundToInt
 
 @Composable
 fun SettingsScreen(controller: AppController, initialTab: Int, narrow: Boolean) {
@@ -89,13 +91,22 @@ private fun Appearance(controller: AppController) {
         VSpace(18.dp)
         Text("Halten Sie den Bildschirm eingeschaltet, wenn Sie Rezepte anzeigen", style = MaterialTheme.typography.titleMedium)
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Switch(keepOn, { controller.setKeepScreenOn(it) }, colors = SwitchDefaults.colors(checkedTrackColor = accent, checkedThumbColor = Color.White))
+            Switch(keepOn, { controller.setKeepScreenOn(it) }, colors = SwitchDefaults.colors(checkedTrackColor = accentFill, checkedThumbColor = Color.White))
             Text(if (keepOn) "  Ein" else "  Aus")
         }
         VSpace(14.dp)
         Text("Textgröße", style = MaterialTheme.typography.titleMedium)
         val sizes = listOf(0.9f to "Klein", 1f to "Normal", 1.15f to "Groß", 1.3f to "Sehr groß")
         DropdownLabel(sizes.firstOrNull { it.first == scale }?.second ?: "Normal", sizes.map { it.second }, { controller.setTextScale(sizes[it].first) })
+        VSpace(14.dp)
+        Text("Anzeigegröße (Schrift, Abstände und Bilder)", style = MaterialTheme.typography.titleMedium)
+        val zoom by controller.zoom.collectAsState()
+        val zooms = listOf(0.9f, 1f, 1.1f, 1.25f, 1.4f, 1.6f)
+        DropdownLabel(
+            "${(zoom * 100).roundToInt()} %" + if (zoom == controller.platform.defaultZoom) " (Standard)" else "",
+            zooms.map { "${(it * 100).roundToInt()} %" + if (it == controller.platform.defaultZoom) " (Standard)" else "" },
+            { controller.setZoom(zooms[it]) },
+        )
     }
 }
 
@@ -218,7 +229,7 @@ private fun ImportTab(controller: AppController) {
 private fun InfoTab(controller: AppController) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text("Cookfolio", style = MaterialTheme.typography.headlineSmall, color = accent)
-        Text("Version 0.2.0")
+        Text("Version $APP_VERSION")
         Text("Private Rezeptverwaltung mit Synchronisierung über den eigenen Server.", color = RkColors.TextSecondary)
         Spacer(Modifier.size(4.dp))
         InfoLine("Server", controller.serverUrl ?: "-")

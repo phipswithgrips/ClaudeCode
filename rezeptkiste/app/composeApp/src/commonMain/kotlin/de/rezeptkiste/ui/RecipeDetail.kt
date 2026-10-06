@@ -46,7 +46,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -59,6 +61,7 @@ import de.rezeptkiste.categoryIds
 import de.rezeptkiste.courseIds
 import de.rezeptkiste.data.NUTRITION_FIELDS
 import de.rezeptkiste.data.Quantity
+import de.rezeptkiste.data.RecipeText
 import de.rezeptkiste.db.Label
 import de.rezeptkiste.db.Recipe
 import de.rezeptkiste.sync.AppJson
@@ -80,7 +83,9 @@ fun recipeAsText(r: Recipe, labelsById: Map<String, Label>): String = buildStrin
     formatMinutes(r.cook_min)?.let { appendLine("Kochzeit: $it") }
     r.ingredients_text?.takeIf { it.isNotBlank() }?.let {
         appendLine(); appendLine("Zutaten")
-        it.lines().forEach { l -> appendLine(if (l.isBlank() || isHeading(l)) l else "- $l") }
+        val ls = it.lines()
+        val heads = RecipeText.ingredientHeadings(ls)
+        ls.forEachIndexed { i, l -> appendLine(if (l.isBlank() || heads[i]) RecipeText.headingText(l) else "- $l") }
     }
     r.directions_text?.takeIf { it.isNotBlank() }?.let {
         appendLine(); appendLine("Zubereitung")
@@ -159,7 +164,7 @@ fun RecipeDetailScreen(controller: AppController, screen: Screen.Detail, narrow:
                 if (narrow) {
                     Ingredients(recipe, factor)
                     VSpace(16.dp)
-                    Directions(recipe)
+                    Directions(recipe, controller)
                     Nutrition(recipe)
                 } else {
                     Row {
@@ -167,7 +172,7 @@ fun RecipeDetailScreen(controller: AppController, screen: Screen.Detail, narrow:
                             Ingredients(recipe, factor)
                             Nutrition(recipe)
                         }
-                        Column(Modifier.weight(1f)) { Directions(recipe) }
+                        Column(Modifier.weight(1f)) { Directions(recipe, controller) }
                     }
                 }
             }
@@ -218,7 +223,9 @@ private fun Header(
 ) {
     var shown by remember(recipe.id) { mutableStateOf(0) }
     val photo: @Composable () -> Unit = {
-        if (photoShas.isNotEmpty()) {
+        if (photoShas.isEmpty()) {
+            RecipePlaceholder(Modifier.size(if (narrow) 140.dp else 180.dp))
+        } else {
             Column {
                 RemoteImage(photoShas.getOrElse(shown) { photoShas.first() }, "medium", controller, Modifier.size(if (narrow) 140.dp else 180.dp))
                 if (photoShas.size > 1) {
@@ -232,7 +239,7 @@ private fun Header(
         }
     }
     val info: @Composable () -> Unit = {
-        Column(Modifier.padding(start = if (photoShas.isEmpty() || narrow) 0.dp else 16.dp)) {
+        Column(Modifier.padding(start = if (narrow) 0.dp else 16.dp)) {
             Text(recipe.title, color = accent, fontSize = 23.sp)
             val courses = recipe.courseIds().mapNotNull { labelsById[it]?.name }
             val cats = recipe.categoryIds().mapNotNull { labelsById[it]?.name }
@@ -277,11 +284,15 @@ private fun Ingredients(recipe: Recipe, factor: Double) {
     val text = Quantity.scaleText(recipe.ingredients_text, factor)
     val lines = text?.lines().orEmpty()
     if (lines.all { it.isBlank() }) return
+    val heads = remember(text) { RecipeText.ingredientHeadings(lines) }
     AccentHeading("Zutaten")
-    lines.forEach { line ->
+    lines.forEachIndexed { i, line ->
         when {
             line.isBlank() -> VSpace(8.dp)
-            isHeading(line) -> Text(line.trim(), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 4.dp))
+            heads[i] -> Text(
+                RecipeText.headingText(line), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(top = if (i == 0) 0.dp else 6.dp, bottom = 2.dp),
+            )
             else -> {
                 val t = line.trim()
                 val n = Quantity.leadingLength(t)
@@ -301,22 +312,44 @@ private fun Ingredients(recipe: Recipe, factor: Double) {
     }
 }
 
+/** Schritt mit antippbaren Zeitangaben: startet einen Timer mit genau dieser Zeit. */
 @Composable
-private fun Directions(recipe: Recipe) {
+fun StepText(line: String, recipeTitle: String, controller: AppController, modifier: Modifier = Modifier) {
+    val found = remember(line) { RecipeText.durations(line) }
+    val styles = timerLinkStyles()
+    Text(
+        buildAnnotatedString {
+            var pos = 0
+            found.forEach { d ->
+                append(line.substring(pos, d.start))
+                val label = "$recipeTitle: " + line.trim().let { if (it.length > 50) it.take(48) + " …" else it }
+                withLink(LinkAnnotation.Clickable("timer${d.start}", styles) { controller.startTimer(d.seconds, label) }) {
+                    append(line.substring(d.start, d.end))
+                }
+                pos = d.end
+            }
+            append(line.substring(pos))
+        },
+        style = MaterialTheme.typography.bodyLarge, modifier = modifier,
+    )
+}
+
+@Composable
+private fun Directions(recipe: Recipe, controller: AppController) {
     val lines = recipe.directions_text?.lines()?.filter { it.isNotBlank() }.orEmpty()
     if (lines.isNotEmpty()) {
         AccentHeading("Zubereitung")
         lines.forEach { line ->
-            if (isHeading(line)) {
-                Text(line.trim(), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 6.dp, bottom = 4.dp))
+            if (RecipeText.isDirectionHeading(line)) {
+                Text(RecipeText.headingText(line), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 6.dp, bottom = 4.dp))
             } else {
-                Text(line.trim(), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(bottom = 14.dp))
+                StepText(line.trim(), recipe.title, controller, Modifier.padding(bottom = 14.dp))
             }
         }
     }
     recipe.notes?.takeIf { it.isNotBlank() }?.let {
         AccentHeading("Notizen", Modifier.padding(top = 10.dp))
-        Text(it, style = MaterialTheme.typography.bodyLarge)
+        it.lines().forEach { l -> StepText(l, recipe.title, controller) }
     }
 }
 

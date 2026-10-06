@@ -113,7 +113,7 @@ fun AdvancedSearchScreen(controller: AppController, narrow: Boolean) {
                     Column { FieldLabel("Bewertung (mindestens)"); Stars(minRating, { minRating = it }) }
                     Column {
                         FieldLabel("Nur Favoriten")
-                        Switch(favOnly, { favOnly = it }, colors = SwitchDefaults.colors(checkedTrackColor = accent, checkedThumbColor = Color.White))
+                        Switch(favOnly, { favOnly = it }, colors = SwitchDefaults.colors(checkedTrackColor = accentFill, checkedThumbColor = Color.White))
                     }
                 }
             },

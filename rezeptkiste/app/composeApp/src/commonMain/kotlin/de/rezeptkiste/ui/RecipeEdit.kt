@@ -30,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,6 +47,7 @@ import de.rezeptkiste.AppController
 import de.rezeptkiste.Screen
 import de.rezeptkiste.data.NUTRITION_FIELDS
 import de.rezeptkiste.data.RecipeDraft
+import de.rezeptkiste.data.RecipeText
 import de.rezeptkiste.sync.EntityType
 import kotlinx.coroutines.launch
 
@@ -133,11 +135,11 @@ private fun BasicsColumn(controller: AppController, d: RecipeDraft, onChange: (R
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Column(Modifier.weight(1f)) {
             FieldLabel("Arbeitszeit")
-            TimeFields(d.prepMin) { onChange(d.copy(prepMin = it)) }
+            TimeField(d.prepMin, { onChange(d.copy(prepMin = it)) })
         }
         Column(Modifier.weight(1f)) {
             FieldLabel("Kochzeit")
-            TimeFields(d.cookMin) { onChange(d.copy(cookMin = it)) }
+            TimeField(d.cookMin, { onChange(d.copy(cookMin = it)) })
         }
     }
     FieldLabel("Bewertung")
@@ -170,38 +172,25 @@ private fun BasicsColumn(controller: AppController, d: RecipeDraft, onChange: (R
     }
 }
 
+/** Zeit frei eintippen: "45", "1:30" oder "1 Std. 30 Min.". */
 @Composable
-private fun TimeFields(minutes: Long?, onChange: (Long?) -> Unit) {
-    val h = (minutes ?: 0L) / 60L
-    val m = (minutes ?: 0L) % 60L
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Column(Modifier.weight(1f)) {
-            Text("Std.", style = MaterialTheme.typography.bodyMedium)
-            NumberDropdown(h, 0..24) { onChange((it * 60L + m).takeIf { v -> v > 0L }) }
-        }
-        Column(Modifier.weight(1f)) {
-            Text("Min.", style = MaterialTheme.typography.bodyMedium)
-            NumberDropdown(m, 0..59) { onChange((h * 60L + it).takeIf { v -> v > 0L }) }
-        }
+fun TimeField(minutes: Long?, onChange: (Long?) -> Unit, modifier: Modifier = Modifier) {
+    var text by remember { mutableStateOf(RecipeText.minutesField(minutes)) }
+    LaunchedEffect(minutes) {
+        if (RecipeText.parseMinutes(text) != minutes) text = RecipeText.minutesField(minutes)
     }
-}
-
-@Composable
-private fun NumberDropdown(value: Long, range: IntRange, onSelect: (Long) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    Box {
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = 34.dp).clip(RoundedCornerShape(3.dp)).background(RkColors.Field).clickable { open = true }.padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(value.toString(), modifier = Modifier.weight(1f))
-            Icon(Icons.Filled.ArrowDropDown, null, tint = RkColors.TextSecondary, modifier = Modifier.size(18.dp))
+    val parsed = RecipeText.parseMinutes(text)
+    Column(modifier) {
+        RkField(
+            text, { t -> text = t; onChange(RecipeText.parseMinutes(t)?.takeIf { it > 0 }) }, Modifier.fillMaxWidth(),
+            placeholder = "z. B. 1:30",
+        )
+        val hint = when {
+            text.isBlank() -> "Minuten oder Std:Min"
+            parsed == null -> "Nicht erkannt"
+            else -> formatMinutes(parsed) ?: ""
         }
-        DropdownMenu(open, onDismissRequest = { open = false }, containerColor = RkColors.SurfaceHigh, modifier = Modifier.heightIn(max = 320.dp)) {
-            range.forEach { v ->
-                DropdownMenuItem(text = { Text(v.toString(), color = if (v.toLong() == value) accent else RkColors.Text) }, onClick = { open = false; onSelect(v.toLong()) })
-            }
-        }
+        Text(hint, style = MaterialTheme.typography.bodySmall, color = if (parsed == null && text.isNotBlank()) RkColors.Error else RkColors.TextSecondary)
     }
 }
 

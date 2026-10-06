@@ -16,15 +16,6 @@ fun formatMinutes(min: Long?): String? {
 
 fun stars(rating: Long): String = if (rating <= 0) "" else "★".repeat(rating.toInt().coerceAtMost(5)) + "☆".repeat((5 - rating.toInt()).coerceAtLeast(0))
 
-/** Zwischenüberschrift in Zutaten oder Zubereitung: mit Doppelpunkt oder in Großbuchstaben. */
-fun isHeading(line: String): Boolean {
-    val t = line.trim()
-    if (t.isEmpty()) return false
-    if (t.endsWith(":")) return true
-    val letters = t.filter { it.isLetter() }
-    return letters.length >= 3 && letters.all { it.isUpperCase() }
-}
-
 fun Recipe.labelIds(): Set<String> = (decodeIds(course_ids) + decodeIds(category_ids) + decodeIds(collection_ids)).toSet()
 
 fun Recipe.matches(query: String): Boolean {
