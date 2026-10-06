@@ -55,7 +55,7 @@ fun SettingsScreen(controller: AppController, initialTab: Int, narrow: Boolean) 
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 10.dp)) {
         PageTitle("Einstellungen")
         Box(Modifier.fillMaxWidth().background(RkColors.Pane).padding(horizontal = 6.dp, vertical = 4.dp).padding(top = 2.dp)) {
-            Row(Modifier.horizontalScroll(rememberScrollState())) { TextTabs(tabs, tab, { tab = it }) }
+            TextTabs(tabs, tab, { tab = it })
         }
         VSpace(10.dp)
         Box(Modifier.weight(1f).fillMaxWidth()) {

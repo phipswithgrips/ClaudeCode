@@ -116,8 +116,10 @@ private fun MessageBar(controller: AppController) {
             controller.clearMessage()
         }
     }
+    val timers by controller.timers.collectAsState()
     msg?.let {
-        Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.BottomCenter) {
+        // Über den Timern, damit sich nichts überdeckt
+        Box(Modifier.fillMaxSize().padding(24.dp).padding(bottom = (timers.size * 86).dp), contentAlignment = Alignment.BottomCenter) {
             Surface(color = RkColors.SurfaceHigh, shape = RoundedCornerShape(4.dp)) {
                 Text(it, modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp))
             }

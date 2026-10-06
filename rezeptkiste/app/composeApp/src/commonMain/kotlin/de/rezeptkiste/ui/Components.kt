@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -84,10 +85,10 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier) {
 /** Reiter als reine Textzeile: gewählt weiß, sonst grau. */
 @Composable
 fun TextTabs(items: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+    Row(modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(28.dp)) {
         items.forEachIndexed { i, t ->
             Text(
-                t, style = MaterialTheme.typography.titleLarge,
+                t, style = MaterialTheme.typography.titleLarge, maxLines = 1, softWrap = false,
                 color = if (i == selected) RkColors.Text else RkColors.TextSecondary,
                 modifier = Modifier.clip(RoundedCornerShape(4.dp)).clickable { onSelect(i) }.padding(vertical = 4.dp),
             )

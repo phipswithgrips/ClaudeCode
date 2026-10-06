@@ -284,7 +284,7 @@ private fun Header(
 @Composable
 private fun InfoRow(label: String, value: @Composable () -> Unit) {
     Row(Modifier.padding(vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, color = RkColors.TextSecondary, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.width(100.dp))
+        Text(label, color = RkColors.TextSecondary, style = MaterialTheme.typography.bodyLarge, maxLines = 1, modifier = Modifier.width(124.dp))
         value()
     }
 }
