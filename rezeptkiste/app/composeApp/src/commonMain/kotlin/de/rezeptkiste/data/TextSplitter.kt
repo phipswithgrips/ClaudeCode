@@ -66,7 +66,8 @@ object TextSplitter {
             sourceLine.matchEntire(line)?.let { m -> source = m.groupValues[2].trim(); return true }
             servingsOnly.matchEntire(line)?.let { m ->
                 if (servingsText == null) {
-                    servingsText = m.value.trim().trimEnd('.')
+                    // "4 Portionen" wird zu "4", wie in Recipe Keeper
+                    servingsText = m.groupValues[1]
                     servingsCount = m.groupValues[1].toLongOrNull()
                 }
                 return true
@@ -77,7 +78,7 @@ object TextSplitter {
         for (line in body) {
             if (ingredientHeads.matches(line)) {
                 mode = 1
-                servings.find(line)?.let { m -> if (servingsText == null) { servingsText = m.value.trim(); servingsCount = m.groupValues[1].toLongOrNull() } }
+                servings.find(line)?.let { m -> if (servingsText == null) { servingsText = m.groupValues[1]; servingsCount = m.groupValues[1].toLongOrNull() } }
                 continue
             }
             if (directionHeads.matches(line)) { mode = 2; continue }

@@ -259,7 +259,10 @@ fun HelpScreen() {
         PageTitle("Hilfe")
         listOf(
             "Start" to "Rezepte nach Rezeptarten, Kategorien oder Favoriten durchsuchen. Oben links lässt sich auf eine Sammlung einschränken.",
-            "Neues Rezept" to "Rezept von Hand anlegen oder Text einfügen und automatisch in Zutaten und Zubereitung aufteilen lassen.",
+            "Neues Rezept" to "Im Freitext einfach tippen oder einfügen: erste Zeile Titel, dann Zutaten und Zubereitung. Rechts erscheint sofort die fertige Ansicht. Im Formular lässt sich alles einzeln bearbeiten, auch Rezeptarten, Kategorien, Fotos und Nährwerte.",
+            "Zwischenüberschriften" to "Zeilen wie \"Teig\", \"Streusel:\" oder \"Für die Sauce\" werden als Überschrift erkannt. Mit \"#\" am Zeilenanfang lässt sich eine Überschrift erzwingen.",
+            "Timer" to "Zeitangaben in der Zubereitung (z. B. \"10 Minuten kneten\") sind unterstrichen. Antippen startet auf Android den Timer der Uhr-App, unter Windows einen Timer unten rechts.",
+            "Einkaufsliste" to "Im Rezept \"Zur Einkaufsliste hinzufügen\" wählen. Zwischenüberschriften werden ausgelassen, die Mengen entsprechen den eingestellten Portionen. Die Liste ist auf allen Geräten gleich.",
             "Portionen" to "Im Rezept auf \"Einstellen +/-\" klicken; die Mengen werden umgerechnet. \"Permanent\" speichert die neuen Mengen.",
             "Sync" to "Änderungen werden 5 Sekunden nach dem Speichern an den Server übertragen. Ohne Netz bleibt alles lokal und wird später abgeglichen.",
             "Rezeptarten und Kategorien" to "Unter Einstellungen > Rezepte anlegen, umbenennen und löschen.",

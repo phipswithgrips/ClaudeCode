@@ -290,8 +290,11 @@ private fun InfoRow(label: String, value: @Composable () -> Unit) {
 }
 
 @Composable
-private fun Ingredients(recipe: Recipe, factor: Double) {
-    val text = Quantity.scaleText(recipe.ingredients_text, factor)
+private fun Ingredients(recipe: Recipe, factor: Double) = IngredientsBlock(Quantity.scaleText(recipe.ingredients_text, factor))
+
+/** Zutatenliste mit Zwischenüberschriften und fetten Mengen (Rezeptansicht und Vorschau). */
+@Composable
+fun IngredientsBlock(text: String?) {
     val lines = text?.lines().orEmpty()
     if (lines.all { it.isBlank() }) return
     val heads = remember(text) { RecipeText.ingredientHeadings(lines) }
@@ -345,21 +348,25 @@ fun StepText(line: String, recipeTitle: String, controller: AppController, modif
 }
 
 @Composable
-private fun Directions(recipe: Recipe, controller: AppController) {
-    val lines = recipe.directions_text?.lines()?.filter { it.isNotBlank() }.orEmpty()
+private fun Directions(recipe: Recipe, controller: AppController) = DirectionsBlock(recipe.directions_text, recipe.notes, recipe.title, controller)
+
+/** Zubereitung und Notizen; Zeitangaben sind antippbar. */
+@Composable
+fun DirectionsBlock(directions: String?, notes: String?, title: String, controller: AppController) {
+    val lines = directions?.lines()?.filter { it.isNotBlank() }.orEmpty()
     if (lines.isNotEmpty()) {
         AccentHeading("Zubereitung")
         lines.forEach { line ->
             if (RecipeText.isDirectionHeading(line)) {
                 Text(RecipeText.headingText(line), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 6.dp, bottom = 4.dp))
             } else {
-                StepText(line.trim(), recipe.title, controller, Modifier.padding(bottom = 14.dp))
+                StepText(line.trim(), title, controller, Modifier.padding(bottom = 14.dp))
             }
         }
     }
-    recipe.notes?.takeIf { it.isNotBlank() }?.let {
+    notes?.takeIf { it.isNotBlank() }?.let {
         AccentHeading("Notizen", Modifier.padding(top = 10.dp))
-        it.lines().forEach { l -> StepText(l, recipe.title, controller) }
+        it.lines().forEach { l -> StepText(l, title, controller) }
     }
 }
 

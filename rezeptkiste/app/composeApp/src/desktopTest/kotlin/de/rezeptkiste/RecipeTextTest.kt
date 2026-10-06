@@ -115,7 +115,7 @@ class RecipeTextTest {
         )
         val back = TextSplitter.split(RecipeText.compose(d)).toDraft()
         assertEquals(d.title, back.title)
-        assertEquals("12 Portionen", back.servingsText)
+        assertEquals("12", back.servingsText)
         assertEquals(30L, back.prepMin)
         assertEquals(45L, back.cookMin)
         assertEquals("Oma", back.source)

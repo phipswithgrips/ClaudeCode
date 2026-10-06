@@ -82,8 +82,7 @@ sealed interface Screen {
     data class Search(val text: String) : Screen
     data object AdvancedSearch : Screen
     data class Detail(val recipeId: String, val context: List<String>) : Screen
-    data class Edit(val recipeId: String?, val prefill: RecipeDraft? = null) : Screen
-    data object TextImport : Screen
+    data class Edit(val recipeId: String?, val prefill: RecipeDraft? = null, val freeText: Boolean = false) : Screen
     data class Settings(val tab: Int = 0) : Screen
     data class Placeholder(val title: String, val text: String) : Screen
     data object Help : Screen

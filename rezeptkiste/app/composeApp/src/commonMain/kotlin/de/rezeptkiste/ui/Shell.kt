@@ -120,7 +120,7 @@ private fun MessageBar(controller: AppController) {
 }
 
 /** Bildschirme ohne Navigationsleiste (wie "Rezept bearbeiten" in Recipe Keeper). */
-private fun Screen.isFullScreen() = this is Screen.Edit || this is Screen.TextImport
+private fun Screen.isFullScreen() = this is Screen.Edit
 
 @Composable
 fun Shell(controller: AppController) {
@@ -176,7 +176,6 @@ private fun ScreenContent(controller: AppController, screen: Screen, narrow: Boo
         Screen.AdvancedSearch -> AdvancedSearchScreen(controller, narrow)
         is Screen.Detail -> RecipeDetailScreen(controller, screen, narrow)
         is Screen.Edit -> RecipeEditScreen(controller, screen, narrow)
-        Screen.TextImport -> TextImportScreen(controller, narrow)
         is Screen.Settings -> SettingsScreen(controller, screen.tab, narrow)
         is Screen.Placeholder -> PlaceholderScreen(screen)
         Screen.Shopping -> ShoppingScreen(controller, narrow)
@@ -243,7 +242,7 @@ private fun NavPane(controller: AppController, expanded: Boolean, onToggle: () -
                 DropdownMenuItem(text = { Text("Rezept aus PDF scannen") }, onClick = {
                     newMenu = false; controller.go(Screen.Placeholder("Rezept aus PDF", "Der PDF-Scan folgt im nächsten Schritt.")); onPicked()
                 })
-                DropdownMenuItem(text = { Text("Rezept aus Text hinzufügen") }, onClick = { newMenu = false; controller.go(Screen.TextImport); onPicked() })
+                DropdownMenuItem(text = { Text("Rezept aus Text hinzufügen") }, onClick = { newMenu = false; controller.go(Screen.Edit(null, freeText = true)); onPicked() })
             }
         }
         NavItem(Icons.Outlined.Home, "Start", screen is Screen.Start || screen is Screen.Course || screen is Screen.Recipes || screen is Screen.Detail, expanded) { open(Screen.Start) }
